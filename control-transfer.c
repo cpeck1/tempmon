@@ -244,12 +244,27 @@ int main(int argc, char **argv)
       break;
     case 2:
       printf("Monitoring, interrupt using CTRL+C\n");
-      //libusb_control_transfer(handle, 0x20, 0, 0, 0, data1, 2, 0);
-	/*
+      libusb_control_transfer(handle, 0x40, 0, 0, 0, data1, 2, 0);
+      /*
+	TO DEVICE:
+	libusb_control_transfer(handle, 0x40, 0, 0, 0, data1, 2, 0);
+	
 	FROM DEVICE:
-	libusb_interrupt_transfer(handle, endpoint, data, length, transferred, 
-	                          timeout);
-	interpret(data);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0040, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x1000, [TRANSFERRED], 0);
+	[Vendor device, whatever that is]
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x1000, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x1000, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x1000, [TRANSFERRED], 0);
+	libusb_control_transfer(handle, 0x60, 05, 0, 0, data2, 2, 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x1000, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	libusb_bulk_transfer(handle, 0x02, [DATA], 0x0002, [TRANSFERRED], 0);
+	[Vendor device, whatever that is]
       */
       libusb_control_transfer(handle, 0x60, 05, 0, 0, data2, 2, 0);
       break;
