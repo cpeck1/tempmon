@@ -182,66 +182,46 @@ int main(int argc, char **argv)
   }
 
   // Open desired device from available devices:
+  
   libusb_device *dev = NULL;
   libusb_device **dev_list;
   
   libusb_context *context = NULL;
   libusb_init(&context);
   libusb_set_debug(context, 3);
+  /*
   ssize_t num_devices = libusb_get_device_list(context, &dev_list);
 
   err = get_device(&dev, context, dev_list, num_devices, product_id, vendor_id);
   if (err) {
     handle_error(err);
   }
+  */
+
 
   // Prepare the device:
   printf("Device found, opening...\n");
 
   libusb_device_handle *handle;
+  handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
+  /*
   err = libusb_open(dev, &handle);
   if (err){
     handle_error(0xE05);
   }
+  */
 
-  libusb_detach_kernel_driver(handle, 0);
-
+  err = libusb_detach_kernel_driver(handle, 0);
+  if (err) {
+    error(1);
+  }
   err = libusb_set_configuration(handle, 1);
   if (err) {
-    printf("Error with set_config: ");
-    switch(err) {
-    case LIBUSB_ERROR_NOT_FOUND:
-      printf("Interface not found\n");
-      break;
-    case LIBUSB_ERROR_BUSY:
-      printf("Busy\n");
-      break;
-    case LIBUSB_ERROR_NO_DEVICE:
-      printf("Device busy\n");
-      break;
-    default:
-      printf("other failure\n");
-    }
     error(1);
   }
   err = libusb_claim_interface(handle, 0);
   if (err < 0) {
-    printf("Error with claim_interface: ");
-    switch(err) {
-    case LIBUSB_ERROR_NOT_FOUND:
-      printf("Interface not found\n");
-      break;
-    case LIBUSB_ERROR_BUSY:
-      printf("Busy\n");
-      break;
-    case LIBUSB_ERROR_NO_DEVICE:
-      printf("Device busy\n");
-      break;
-    default:
-      printf("other failure\n");
-    }
     error(1);
-
   }
 
 
@@ -264,14 +244,14 @@ int main(int argc, char **argv)
       break;
     case 2:
       printf("Monitoring, interrupt using CTRL+C\n");
-      libusb_control_transfer(handle, 0x20, 0, 0, 0, data1, 2, 0);
+      //libusb_control_transfer(handle, 0x20, 0, 0, 0, data1, 2, 0);
 	/*
 	FROM DEVICE:
 	libusb_interrupt_transfer(handle, endpoint, data, length, transferred, 
 	                          timeout);
 	interpret(data);
       */
-      // libusb_control_transfer(handle, 0x60, 05, 0, 0, data2, 2, 0);
+      libusb_control_transfer(handle, 0x60, 05, 0, 0, data2, 2, 0);
       break;
     default:
       printf("Invalid selection\n");
@@ -280,6 +260,9 @@ int main(int argc, char **argv)
   }
 
   printf("Exiting...\n");
+  libusb_release_interface(handle, 0);
+  libusb_attach_kernel_driver(handle, 0);
+  libusb_reset_device(handle);
   libusb_close(handle);
   libusb_free_device_list(dev_list, 1);
   libusb_exit(context);
