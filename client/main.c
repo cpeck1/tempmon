@@ -37,19 +37,33 @@ int main()
   
   // use libUSB to detach the device from the kernel driver first, since 
   // FTDXX has no such functionality
-  printf("asca");
-  libusb_context* ctx;
-  printf("asda");
-  libusb_device_handle* device_handle = libusb_open_device_with_vid_pid(ctx,
-  						     vendor_id, product_id);
-  printf("asdb");
-  libusb_detach_kernel_driver(device_handle, 0);
-  printf("asdc");
-  libusb_close(device_handle);
-  printf("asdd");
+  err = 0;
+  libusb_context *context = NULL;
+  libusb_init(&context);
+  libusb_set_debug(context, 3);
+  libusb_device_handle *handle;
+
+  handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
+  
+  if (libusb_kernel_driver_active(handle, 0)) {
+    printf("Kernel driver already attached. Detaching...\n");
+    err = libusb_detach_kernel_driver(handle, 0);
+    if (err < 0) {
+      printf("There was an error detaching the kernel driver.\n");
+      return 1;
+    }
+    else {
+      printf("Kernel driver detached.\n");
+    }
+  }
+  libusb_release_interface(handle, 0);
+  libusb_close(handle);
+  libusb_exit(context);
+
 
   // now use FTDXX to open the device
   FT_STATUS ftStatus;
+  FT_DEVICE_LIST_INFO_NODE *pDest;
   DWORD dwNumDevs;
   unsigned char cBufWrite[BUF_SIZE];
   char* pcBufLD[MAX_DEVICES + 1];
@@ -58,15 +72,13 @@ int main()
   
   int i, j;
   FT_HANDLE ftHandle;
-  DWORD pID = product_id;
-  DWORD vID = vendor_id;
 
   for (i = 0; i < MAX_DEVICES; i++) {
     pcBufLD[i] = cBufLD[i];
   }
   pcBufLD[MAX_DEVICES] = NULL;
 
-  ftStatus = FT_SetVIDPID(vID, pID);
+  ftStatus = FT_SetVIDPID((DWORD) vendor_id, (DWORD) product_id);
   if (ftStatus != FT_OK) {
     printf("Problem setting vID and pID\n");
     return 1;
@@ -80,14 +92,14 @@ int main()
 
   printf("numdevs: %d\n", dwNumDevs);
 
-  ftStatus = FT_ListDevices(pcBufLD, &dwNumDevs, FT_LIST_ALL);
+  ftStatus = FT_GetDeviceInfoList(pDest, &dwNumDevs);
   if (ftStatus != FT_OK) {
     printf("Error: FT_ListDevices(%d)\n", (int) ftStatus);
     return 1;
   }
 
   for (i = 0; (i < MAX_DEVICES) && (i < (int) dwNumDevs); i++) {
-    printf("Device %d Serial Number - %s\n", i, cBufLD[i]);
+    printf("Device %d flags: 0x%x\n", i, pDest[i].Flags);
   }
 
   for (j = 0; j < BUF_SIZE; j++) {
