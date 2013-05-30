@@ -99,21 +99,22 @@ int main()
   }
 
   for (i = 0; (i < MAX_DEVICES) && (i < (int) dwNumDevs); i++) {
-    printf("Device %d flags: 0x%x\n", i, pDest[i].Flags);
+    printf("Device %d serial: %s\n", i, pDest[i].SerialNumber);
   }
 
   for (j = 0; j < BUF_SIZE; j++) {
     cBufWrite[j] = j;
   }
 
-  ftStatus = FT_Open(0, &ftHandle);
+  ftStatus = FT_OpenEx("SEM710", FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
   if (ftStatus != FT_OK) {
     printf("Error: FT_Open(%d)\n", ftStatus);
     return 1;
   }
-
-  printf("Opened device %s\n", cBufLD[i]);
-  iDevicesOpen++;
+  else {
+    printf("Opened device %s\n", cBufLD[i]);
+    iDevicesOpen++;
+  }
 
   // 2.5: report open status
 
