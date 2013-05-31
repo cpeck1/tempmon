@@ -40,6 +40,14 @@ typedef enum {
   MESSAGE_NOT_VALID,
 } COMMS_RX_STATE;
 
+typedef struct {
+  float ADC_VALUE;
+  float ELEC_VALUE;
+  float PROCESS_VARIALBE;
+  float MA_OUT;
+  float CJ_TEMP;
+} SEM710_READINGS;
+
 int detach_device_kernel(int vendor_id, int product_id) 
 {
   // if the device kernel with the given vendor id and product id is currently 
@@ -366,6 +374,20 @@ int send_and_receive_bytes(uint8_t* byte_array, int byte_array_size,
   return (!message_received);
 }
 
+float float_from_byte_array(uint8_t *byte_array, int start_index)
+{
+  // bytes are stored little Endian, so reverse first
+  int i;
+  float f1;
+  uint8_t chars[4];
+
+  for (i = 0; i < 4; i++) {
+    chars[3-i] = byte_array[start_index + i];
+  }
+  f1 = *((float *)(&chars[0]));
+  return f1;
+}
+
 int main()
 {
   // Get device ids from file:
@@ -401,7 +423,10 @@ int main()
   if (open_failed) { return 1; }
 
   prep_failed = prepare_device(ftHandle);
-  if (prep_failed) { return 1; }
+  if (prep_failed) { 
+    FT_Close(ftHandle);
+    return 1; 
+  }
 
   // 2.5: report open status
   
@@ -430,9 +455,19 @@ int main()
   printf(" %u]\n", byte_array[6]);
 
   rw_failed = send_and_receive_bytes(byte_array, 7, ftHandle, response_array);
-  if (rw_failed) {
+  if (rw_failed || response_array[1] != 34) {
     printf("Problem reading or writing data to device.\n");
+    FT_Close(ftHandle);
+    return 1;
   }
+
+  // decode reply
+  SEM710_READINGS readings;
+  readings.ADC_VALUE = float_from_byte_array(response_array, 3);
+  readings.ELEC_VALUE = float_from_byte_array(response_array, 7);
+  readings.PROCESS_VARIALBE = float_from_byte_array(response_array, 11);
+  readings.MA_OUT = float_from_byte_array(response_array, 15);
+  readings.CJ_TEMP = float_from_byte_array(response_array, 19);
   
   // 4.5: transmit data from SEM710
 
