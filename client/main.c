@@ -154,7 +154,9 @@ int prepare_device(FT_HANDLE ftHandle)
   return 0;
 }
 
-uint16_t make_CRC(uint8_t *byte_array, int end_position)
+
+
+uint16_t make_crc(uint8_t *byte_array, int end_position)
 {
   int i;
   uint16_t CRC;
@@ -172,18 +174,26 @@ uint16_t make_CRC(uint8_t *byte_array, int end_position)
   */
 
   CRC = 0xFFFF;
-  for (i = 1; i < end_position + 1; i++) {
+  for (i = 1; i <= end_position; i++) {
     char_in = byte_array[i];
     CRC = CRC ^ char_in;
-    for (j = 1; j < 9; j++) {
+    for (j = 0; j < 8; j++) {
       lsBit = CRC & 1;
-      CRC = (int) (CRC / 2);
+      CRC = CRC >> 1;
       if (lsBit == 1) {
 	CRC = CRC ^ 0xA001;
       }
     }
   }
   return CRC;
+}
+
+int crc_pass(uint8_t *rx_data, DWORD rx_pointer) 
+{
+  uint16_t calculated_crc = make_crc(rx_data, rx_pointer - 2);
+  uint16_t rx_crc = (rx_data[rx_pointer] << 8) + (rx_data[rx_pointer - 1]);
+
+  return (calculated_crc == rx_crc);
 }
 
 void generate_read_message(uint8_t byte_array[6])
@@ -208,7 +218,7 @@ void generate_read_message(uint8_t byte_array[6])
   byte_array[3] = 0;
 
   // cyclic redundancy check:
-  crc = make_CRC(byte_array, 3);
+  crc = make_crc(byte_array, 3);
   lbyte = (crc >> 8);
   rbyte = (crc) & 0xFF;
 
@@ -220,25 +230,27 @@ void generate_read_message(uint8_t byte_array[6])
   byte_array[6] = 0xAA;
 }
 
-int send_bytes(uint8_t* byte_array, int byte_array_size, FT_HANDLE ftHandle)
+int send_and_receive_bytes(uint8_t* byte_array, int byte_array_size, 
+			   FT_HANDLE ftHandle, uint8_t* output_array)
 {
-  uint8_t timeout;
-  float tStart;
-  long q_status;
+  // uint8_t timeout;
+  DWORD q_status;
   uint8_t read_buff[280];
   uint8_t retry_counter = 4;
-  int i, j;
+  DWORD i;
   int count;
   uint8_t rx_byte;
   int rx_len;
   uint8_t message_received;
   RX_FRAMING rx_frame;
   uint8_t rx_data[280];
-  int rx_pointer;
+  DWORD rx_pointer;
   time_t start;
   time_t expire;
-  uint8_t byte;
+  // uint8_t byte;
   FT_STATUS ftStatus;
+  DWORD bytes_to_read = 262;
+  DWORD bytes_written;
   
   while (retry_counter > 0) {
     usleep(50000); // 50 ms
@@ -246,71 +258,112 @@ int send_bytes(uint8_t* byte_array, int byte_array_size, FT_HANDLE ftHandle)
     time(&expire);
     message_received = 0;
     q_status = 0;
-    timeout = 0;
-    rx_frame = RX_FRAMING.WAITING_FOR_START;
+    rx_frame = WAITING_FOR_START;
 
     // implement:
-    // ftStatus = SendOutBytesDirect(ByteArray); 
+    ftStatus = FT_Write(ftHandle, byte_array, byte_array_size, &bytes_written);
+    if (ftStatus != FT_OK) {
+      printf("Error FT_Write(%d)\n.", ftStatus);
+      return 1;
+    }
+    printf("Bytes written: %d\n", bytes_written);
     usleep(200000); // 200 ms
     while ((difftime(expire, start) < 2.5) && (!message_received)) {
-      ftStatus = FT_GetQueueStatus(ftHandle, q_status);
+      ftStatus = FT_GetQueueStatus(ftHandle, &q_status);
+      if (ftStatus != FT_OK) {
+	printf("Error FT_GetQueueStatus(%d)\n", ftStatus);
+      }
       if (q_status != 0) { // then there is something to read
-	ftStatus = FT_Read_Bytes(ftHandle, read_buff(0), 262, q_status);
+	ftStatus = FT_Read(ftHandle, read_buff, bytes_to_read, &q_status);
 	usleep(50000); // 50 ms
-	for (i = 0; i <= qStatus, i++) {
-	  rx_byte = read_buff(i);
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
-	    if (loop_comms) {
-	      if (rx_byte == 0xAA) {
-		rx_frame = RX_FRAMING.WAITING_FOR_REPLY_START;
+	for (i = 0; i <= q_status; i++) {
+	  rx_byte = read_buff[i];
+	  if (rx_frame == WAITING_FOR_START) {
+	    if (rx_byte == 0x55) {
+	      rx_pointer = 0;
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      rx_frame = WAITING_FOR_COMMAND;
+	      count = 0;
+	      rx_len = 0;
+	    }
+	  }
+	  else if (rx_frame == WAITING_FOR_REPLY_START) {
+	    if (rx_byte == 0x55) {
+	      rx_pointer = 0;
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      rx_frame = WAITING_FOR_COMMAND;
+	      count = 0;
+	      rx_len = 0;
+	    }
+	  }
+
+	  else if ((rx_frame == WAITING_FOR_COMMAND) ||
+	      (rx_frame == WAITING_FOR_LEN)) 
+	    {
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      if (rx_frame == WAITING_FOR_LEN) {
+		rx_len = rx_byte - 1;
+		rx_frame = WAITING_FOR_DATA;
 	      }
+	      else {
+		rx_frame = WAITING_FOR_LEN;
+	      }
+	    }
+	   
+	  else if (rx_frame == WAITING_FOR_DATA) {
+	    if (count < rx_len) {
+	      count = count + 1;
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
 	    }
 	    else {
-	      if (rx_byte == 0x55) {
-		rx_pointer = 0;
-		rx_data[rx_pointer] = rx_byte;
-		rx_pointer = rx_pointer + 1;
-		rx_frame = RX_FRAMING.WAITING_FOR_COMMAND;
-		count = 0;
-		rx_len = 0;
+	      // this is CRC low
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      rx_frame = WAITING_FOR_CRC_HI;
+	    }
+	  }
+	  
+	  else if (rx_frame == WAITING_FOR_CRC_LO) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = WAITING_FOR_CRC_HI;
+	  }
+	  else if (rx_frame == WAITING_FOR_CRC_HI) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = WAITING_FOR_END;
+	  }
+	  else if (rx_frame == WAITING_FOR_END) {
+	    if (rx_byte == 0xAA) {
+	      rx_frame = RX_OVERFLOW;
+	      if (crc_pass(rx_data, rx_pointer) == 0) {
+	        message_received = 0;
+	      }
+	      else {
+	        for (i = 0; i <= rx_pointer; i++) {
+		  output_array[i] = rx_data[i];
+		}
+		message_received = 1;
 	      }
 	    }
 	  }
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
-
-	  }
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
-	    
-	  }
-	  if ((rx_frame == RX_FRAMING.WAITING_FOR_COMMAND) ||
-	      (rx_frame == RX_FRAMING.WAITING_FOR_LEN)) {
-
-	  }
-	   
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_DATA) {
-
-	  }
-	  
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_DATA) {
-
-	  }
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_CRC_LO) {
-
-	  }
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_CRC_HI) {
-
-	  }
-	  if (rx_frame == RX_FRAMING.WAITING_FOR_END) {
-
-	  }
-	  if (rx_frame == RX_FRAMING.RX_OVERFLOW) {
+	  else if (rx_frame == RX_OVERFLOW) {
+	    break;
 	  }
 	}
       }
+      time(&expire);
     }
-    
+    if (!message_received) {
+      retry_counter = retry_counter - 1;
+      ftStatus = FT_Purge(ftHandle, FT_PURGE_TX & FT_PURGE_RX);
+    }
   }
-  return 0;
+  return (!message_received);
 }
 
 int main()
@@ -363,6 +416,9 @@ int main()
   // 4: read data from SEM710
   int i;
   uint8_t byte_array[6];
+  uint8_t *response_array;
+  int rw_failed;
+  FT_STATUS ftStatus;
   // long intArray[3];
 
   generate_read_message(byte_array);
@@ -373,11 +429,24 @@ int main()
   }
   printf(" %u]\n", byte_array[6]);
 
-  send_bytes(byte_array);
+  rw_failed = send_and_receive_bytes(byte_array, 7, ftHandle, response_array);
+  if (rw_failed) {
+    printf("Problem reading or writing data to device.\n");
+  }
   
   // 4.5: transmit data from SEM710
 
   // 5: purge buffer; await further instructions
 
+  // 6: close device
+  ftStatus = FT_Close(ftHandle);
+  if (ftStatus != FT_OK) {
+    printf("Error FT_Close(%d).\n", ftStatus);
+    return 1;
+  }
+  else {
+    printf("Device closed. Exiting...\n");
+  }
+  
   return 0;
 }
