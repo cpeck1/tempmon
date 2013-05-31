@@ -5,18 +5,46 @@
 #include <unistd.h>
 #include <libusb-1.0/libusb.h>
 #include <math.h>
+#include <time.h>
 #include "./ftd2xx/ftd2xx.h"
 #include "devstats.c"
+
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
 
 #define SEM710_BAUDRATE 19200
 
+typedef enum { 
+  WAITING_FOR_START, 
+  WAITING_FOR_REPLY_START, 
+  WAITING_FOR_COMMAND, 
+  WAITING_FOR_LEN, 
+  WAITING_FOR_DATA, 
+  WAITING_FOR_CRC_LO, 
+  WAITING_FOR_CRC_HI, 
+  WAITING_FOR_END,
+  RX_OVERFLOW
+} RX_FRAMING;
+
+typedef enum {
+  WAITING,
+  GET_FUNCTION,
+  GET_CODE,
+  start_address,
+  NO_BYTES,
+  GET_BYTES,
+  GET_CRC_LOW,
+  GET_CRC_HIGH,
+  ENGAGED,
+  MESSAGE_NOT_VALID,
+} COMMS_RX_STATE;
+
 int detach_device_kernel(int vendor_id, int product_id) 
 {
   // if the device kernel with the given vendor id and product id is currently 
-  // active then detach it and return whether or not this action failed
+  // active then detach it and return whether or not this action failed. This 
+  // must be done using libusb, since ftd2xx does not have this capability.
 
   int failed = 0;
   libusb_context *context = NULL;
@@ -42,10 +70,8 @@ int detach_device_kernel(int vendor_id, int product_id)
 }
 
 int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
-  // use libUSB to detach the device from the kernel driver first, since 
-  // FTDXX has no such functionality
 
-  // now use FTDXX to open the device
+  // now use FTD2XX to open the device
   FT_STATUS ftStatus;
   FT_DEVICE_LIST_INFO_NODE *pDest = NULL;
   DWORD dwNumDevs;
@@ -81,6 +107,8 @@ int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
 
 int prepare_device(FT_HANDLE ftHandle) 
 {
+  // prepare the device for communication, per the specifications provided by
+  // Status Instruments about the attributes of the SEM710
   FT_STATUS ftStatus;
   ftStatus = FT_ResetDevice(ftHandle);
   if (ftStatus != FT_OK) {
@@ -144,12 +172,12 @@ uint16_t make_CRC(uint8_t *byte_array, int end_position)
   */
 
   CRC = 0xFFFF;
-  for (i = 1; i < end_position; i++) {
+  for (i = 1; i < end_position + 1; i++) {
     char_in = byte_array[i];
     CRC = CRC ^ char_in;
     for (j = 1; j < 9; j++) {
       lsBit = CRC & 1;
-      CRC = (int) (lsBit / 2);
+      CRC = (int) (CRC / 2);
       if (lsBit == 1) {
 	CRC = CRC ^ 0xA001;
       }
@@ -160,6 +188,9 @@ uint16_t make_CRC(uint8_t *byte_array, int end_position)
 
 void generate_read_message(uint8_t byte_array[6])
 {
+  // Fill the given byte array with bytes corresponding to instructions to the
+  // SEM710 to read its current temperature measurement
+
   uint16_t crc;
   uint16_t lbyte;
   uint16_t rbyte;
@@ -170,29 +201,116 @@ void generate_read_message(uint8_t byte_array[6])
   // Command (cREAD_PROCESS):
   byte_array[1] = 0x02; 
 
-  // highest index of input byte array (at time of input), in this case 0
+  // number of elements in byte_array at the time of input; according to the
+  // specifications provided by Status Instruments, this byte_array should have
+  // one 0 byte in its first index value, so fill the array accordingly.
   byte_array[2] = 0;
+  byte_array[3] = 0;
 
   // cyclic redundancy check:
   crc = make_CRC(byte_array, 3);
-  lbyte = (crc >> 8) & 0xff;
-  rbyte = (crc) & 0xff;
+  lbyte = (crc >> 8);
+  rbyte = (crc) & 0xFF;
 
   // put CRC on byte_array, little Endian
-  printf("CRC=%d\n", crc);
-  printf("rbyte=%d\n", rbyte);
-  printf("lbyte=%d\n", lbyte);
-
-  byte_array[3] = rbyte;
-  byte_array[4] = lbyte;
+  byte_array[4] = rbyte;
+  byte_array[5] = lbyte;
 
   // End byte
-  byte_array[5] = 0xAA;
+  byte_array[6] = 0xAA;
 }
 
-int send_bytes(uint8_t* byte_array)
+int send_bytes(uint8_t* byte_array, int byte_array_size, FT_HANDLE ftHandle)
 {
+  uint8_t timeout;
+  float tStart;
+  long q_status;
+  uint8_t read_buff[280];
+  uint8_t retry_counter = 4;
+  int i, j;
+  int count;
+  uint8_t rx_byte;
+  int rx_len;
+  uint8_t message_received;
+  RX_FRAMING rx_frame;
+  uint8_t rx_data[280];
+  int rx_pointer;
+  time_t start;
+  time_t expire;
+  uint8_t byte;
+  FT_STATUS ftStatus;
   
+  while (retry_counter > 0) {
+    usleep(50000); // 50 ms
+    time(&start);
+    time(&expire);
+    message_received = 0;
+    q_status = 0;
+    timeout = 0;
+    rx_frame = RX_FRAMING.WAITING_FOR_START;
+
+    // implement:
+    // ftStatus = SendOutBytesDirect(ByteArray); 
+    usleep(200000); // 200 ms
+    while ((difftime(expire, start) < 2.5) && (!message_received)) {
+      ftStatus = FT_GetQueueStatus(ftHandle, q_status);
+      if (q_status != 0) { // then there is something to read
+	ftStatus = FT_Read_Bytes(ftHandle, read_buff(0), 262, q_status);
+	usleep(50000); // 50 ms
+	for (i = 0; i <= qStatus, i++) {
+	  rx_byte = read_buff(i);
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
+	    if (loop_comms) {
+	      if (rx_byte == 0xAA) {
+		rx_frame = RX_FRAMING.WAITING_FOR_REPLY_START;
+	      }
+	    }
+	    else {
+	      if (rx_byte == 0x55) {
+		rx_pointer = 0;
+		rx_data[rx_pointer] = rx_byte;
+		rx_pointer = rx_pointer + 1;
+		rx_frame = RX_FRAMING.WAITING_FOR_COMMAND;
+		count = 0;
+		rx_len = 0;
+	      }
+	    }
+	  }
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
+
+	  }
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_REPLY_START) {
+	    
+	  }
+	  if ((rx_frame == RX_FRAMING.WAITING_FOR_COMMAND) ||
+	      (rx_frame == RX_FRAMING.WAITING_FOR_LEN)) {
+
+	  }
+	   
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_DATA) {
+
+	  }
+	  
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_DATA) {
+
+	  }
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_CRC_LO) {
+
+	  }
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_CRC_HI) {
+
+	  }
+	  if (rx_frame == RX_FRAMING.WAITING_FOR_END) {
+
+	  }
+	  if (rx_frame == RX_FRAMING.RX_OVERFLOW) {
+	  }
+	}
+      }
+    }
+    
+  }
+  return 0;
 }
 
 int main()
@@ -248,9 +366,12 @@ int main()
   // long intArray[3];
 
   generate_read_message(byte_array);
-  for (i = 0; i < 6; i++) {
-    printf("%u\n", byte_array[i]);
+  printf("Message: [");
+  printf("%u,", byte_array[0]);
+  for (i = 1; i < 6; i++) {
+    printf(" %u,", byte_array[i]);
   }
+  printf(" %u]\n", byte_array[6]);
 
   send_bytes(byte_array);
   
