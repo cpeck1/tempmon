@@ -465,11 +465,17 @@ int main()
   SEM710_READINGS readings;
   readings.ADC_VALUE = float_from_byte_array(response_array, 3);
   readings.ELEC_VALUE = float_from_byte_array(response_array, 7);
-  readings.PROCESS_VARIALBE = float_from_byte_array(response_array, 11);
+  readings.PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
   readings.MA_OUT = float_from_byte_array(response_array, 15);
   readings.CJ_TEMP = float_from_byte_array(response_array, 19);
   
   // 4.5: transmit data from SEM710
+
+  printf("Device ADC reading: %f\n", readings.ADC_VALUE);
+  printf("Device ELEC reading: %f\n", readings.ELEC_VALUE);
+  printf("Device PROCESS reading: %f\n", readings.PROCESS_VARIABLE);
+  printf("Device MA reading: %f\n", readings.MA_OUT);
+  printf("Device TEMP reading: %f\n", readings.CJ_TEMP);
 
   // 5: purge buffer; await further instructions
 
