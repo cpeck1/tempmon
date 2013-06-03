@@ -265,24 +265,24 @@ int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
 }
 
 
-int prepare_device(FT_HANDLE ftHandle) 
+int prepare_device(FT_HANDLE *ftHandle) 
 {
   // prepare the device for communication, per the specifications provided by
   // Status Instruments about the attributes of the SEM710
   FT_STATUS ftStatus;
-  ftStatus = FT_ResetDevice(ftHandle);
+  ftStatus = FT_ResetDevice(*ftHandle);
   if (ftStatus != FT_OK) {
     printf("Error: FT_ResetDevice(%d)\n", ftStatus);
     return -1;
   }
 
-  ftStatus = FT_SetBaudRate(ftHandle, SEM710_BAUDRATE);
+  ftStatus = FT_SetBaudRate(*ftHandle, SEM710_BAUDRATE);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetBaudRate(%d)\n", ftStatus);
     return -1;
   }
 
-  ftStatus = FT_SetDataCharacteristics(ftHandle, 8, 0, 0);
+  ftStatus = FT_SetDataCharacteristics(*ftHandle, 8, 0, 0);
   /*
     args following ftHandle:
     FT_DATA_BITS_8 == 8
@@ -294,20 +294,20 @@ int prepare_device(FT_HANDLE ftHandle)
     return -1;
   }
 
-  ftStatus = FT_SetFlowControl(ftHandle, 0x00, 0, 0);
+  ftStatus = FT_SetFlowControl(*ftHandle, 0x00, 0, 0);
   // FT_FLOW_NONE == &H0 == 0x00
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetFlowControl(%d)\n", ftStatus);
     return -1;
   }
 
-  ftStatus = FT_SetTimeouts(ftHandle, 250, 250);
+  ftStatus = FT_SetTimeouts(*ftHandle, 250, 250);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetTimeouts(%d)\n", ftStatus);
     return -1;
   }
 
-  ftStatus = FT_SetLatencyTimer(ftHandle, 3);
+  ftStatus = FT_SetLatencyTimer(*ftHandle, 3);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetLatencyTimer(%d)\n", ftStatus);
     return -1;
@@ -356,8 +356,8 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
 int crc_pass(uint8_t *rx_data, DWORD rx_pointer) 
 {
   // returns whether the received crc is the same as the calculated crc from
-  // the byte array passed by the USB device; if it is not, then something
-  // caused the transfer to fail.
+  // the byte array passed by the USB device; if it is not, then the usb 
+  // transfer was faulty
   uint16_t calculated_crc = make_crc(rx_data, rx_pointer - 2);
   uint16_t rx_crc = (rx_data[rx_pointer] << 8) + (rx_data[rx_pointer - 1]);
 
@@ -368,8 +368,8 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
 		     int byte_array_upper_index) 
 {
   // Generate a message to send to the device, based on the given command and
-  // byte array
-  uint8_t *output;
+  // byte array; returns the size of the message
+  uint8_t output[259];
   int i = 0;
   uint8_t x;
   uint16_t crc;
@@ -378,16 +378,14 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
 
   // start byte
   output[i] = 0x55;
-  
+
   // command
   output[++i] = COMMAND;
 
   // length
   output[++i] = byte_array_upper_index;
-  i = 2;
   for (x = 0; x <= byte_array_upper_index; x++) {
-    i = i + 1;
-    output[i] = byte_array[x];
+    output[++i] = byte_array[x];
   }
 
   // crc
@@ -404,11 +402,12 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
   for (x = 0; x <= i; x++) {
     byte_array[x] = output[x];
   }
-  return 0;
+
+  return (i + 1);
 }
 
 int send_bytes(uint8_t* byte_array, int byte_array_size, 
-	       FT_HANDLE ftHandle, uint8_t* output_array)
+	       FT_HANDLE *ftHandle, uint8_t* output_array)
 {
   // transmit the given byte array to the USB device and await a reply
   DWORD q_status;
@@ -438,7 +437,7 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
     rx_frame = WAITING_FOR_START;
 
     // implement:
-    ftStatus = FT_Write(ftHandle, byte_array, byte_array_size, &bytes_written);
+    ftStatus = FT_Write(*ftHandle, byte_array, byte_array_size, &bytes_written);
     if (ftStatus != FT_OK) {
       printf("Error FT_Write(%d)\n.", ftStatus);
       return 1;
@@ -446,12 +445,12 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
     printf("Bytes written: %d\n", bytes_written);
     usleep(200000); // 200 ms
     while ((difftime(expire, start) < 2.5) && (!message_received)) {
-      ftStatus = FT_GetQueueStatus(ftHandle, &q_status);
+      ftStatus = FT_GetQueueStatus(*ftHandle, &q_status);
       if (ftStatus != FT_OK) {
 	printf("Error FT_GetQueueStatus(%d)\n", ftStatus);
       }
       if (q_status != 0) { // then there is something to read
-	ftStatus = FT_Read(ftHandle, read_buff, bytes_to_read, &q_status);
+	ftStatus = FT_Read(*ftHandle, read_buff, bytes_to_read, &q_status);
 	usleep(50000); // 50 ms
 	for (i = 0; i <= q_status; i++) {
 	  rx_byte = read_buff[i];
@@ -537,7 +536,7 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
     }
     if (!message_received) {
       retry_counter = retry_counter - 1;
-      ftStatus = FT_Purge(ftHandle, FT_PURGE_TX & FT_PURGE_RX);
+      ftStatus = FT_Purge(*ftHandle, FT_PURGE_TX & FT_PURGE_RX);
     }
   }
   return (!message_received);
@@ -555,6 +554,40 @@ float float_from_byte_array(uint8_t *byte_array, int start_index)
   }
   f1 = *((float *)(&chars[0]));
   return f1;
+}
+
+int SEM710_read_process(FT_HANDLE *ftHandle, SEM710_READINGS *readings)
+{
+  int i;
+  uint8_t byte_array[256];
+  int len;
+  uint8_t response_array[256];
+  int rw_failed;
+  SEM_COMMANDS sem_commands;
+  SEM_COMMANDS_init(&sem_commands);
+
+  byte_array[0] = 0;
+  len = generate_message(sem_commands.cREAD_PROCESS, byte_array, 0);
+  printf("Message: [%u,", byte_array[0]);
+  for (i = 1; i < len; i++) {
+    printf(" %u,", byte_array[i]);
+  }
+  printf(" %u]\n", byte_array[len]);
+
+  rw_failed = send_bytes(byte_array, len, ftHandle, response_array);
+  if (rw_failed || response_array[1] != 34) {
+    printf("Problem reading or writing data to device.\n");
+    return -1;
+  }
+
+  // decode reply
+  readings->ADC_VALUE = float_from_byte_array(response_array, 3);
+  readings->ELEC_VALUE = float_from_byte_array(response_array, 7);
+  readings->PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
+  readings->MA_OUT = float_from_byte_array(response_array, 15);
+  readings->CJ_TEMP = float_from_byte_array(response_array, 19);
+
+  return 0;
 }
 
 int main()
@@ -591,7 +624,7 @@ int main()
   open_failed = open_device(&ftHandle, vendor_id, product_id);
   if (open_failed) { return 1; }
 
-  prep_failed = prepare_device(ftHandle);
+  prep_failed = prepare_device(&ftHandle);
   if (prep_failed) { 
     FT_Close(ftHandle);
     return 1; 
@@ -611,38 +644,15 @@ int main()
   //////////////////////////////
   // 4: read data from SEM710 //
   //////////////////////////////
-
-  int i;
-  uint8_t* byte_array;
-  uint8_t *response_array;
-  int rw_failed;
+  int read_failed;
   FT_STATUS ftStatus;
-  SEM_COMMANDS sem_commands;
-  SEM_COMMANDS_init(&sem_commands);
-  // long intArray[3];
-
-  byte_array[0] = 0;
-  generate_message(sem_commands.cREAD_PROCESS, byte_array, 0);
-  printf("Message: [%u,", byte_array[0]);
-  for (i = 1; i < 6; i++) {
-    printf(" %u,", byte_array[i]);
-  }
-  printf(" %u]\n", byte_array[6]);
-
-  rw_failed = send_bytes(byte_array, 7, ftHandle, response_array);
-  if (rw_failed || response_array[1] != 34) {
-    printf("Problem reading or writing data to device.\n");
+  SEM710_READINGS readings;
+  read_failed = SEM710_read_process(&ftHandle, &readings);
+  if (read_failed) {
+    printf("Read process failure.\n");
     FT_Close(ftHandle);
     return 1;
   }
-
-  // decode reply
-  SEM710_READINGS readings;
-  readings.ADC_VALUE = float_from_byte_array(response_array, 3);
-  readings.ELEC_VALUE = float_from_byte_array(response_array, 7);
-  readings.PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
-  readings.MA_OUT = float_from_byte_array(response_array, 15);
-  readings.CJ_TEMP = float_from_byte_array(response_array, 19);
 
   // 4.5: transmit data from SEM710
 
