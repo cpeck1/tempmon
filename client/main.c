@@ -43,10 +43,167 @@ typedef enum {
 typedef struct {
   float ADC_VALUE;
   float ELEC_VALUE;
-  float PROCESS_VARIALBE;
+  float PROCESS_VARIABLE;
   float MA_OUT;
   float CJ_TEMP;
 } SEM710_READINGS;
+
+typedef struct {
+  uint8_t cACK;
+  uint8_t cNAK;
+  uint8_t cREAD_CAL;                    
+  uint8_t cREAD_CONFIG;
+  uint8_t cREAD_PROCESS;                 
+  uint8_t cSELF_CAL_0mv;                
+  uint8_t cSELF_CAL_50mv;               
+  uint8_t cSELF_CAL_100R;              
+  uint8_t cSELF_CAL_300R;              
+  uint8_t cSELF_CAL_20mA;              
+  uint8_t cSELF_CAL_0mA;               
+  uint8_t cSELF_CAL_200mV;             
+  uint8_t cSELF_CAL_1V;                
+  uint8_t cSELF_CAL_10V;               
+  uint8_t cSELF_CAL_slide_wire;        
+  uint8_t cPRESET_4ma_COUNT;            
+  uint8_t cPRESET_12ma_COUNT;           
+  uint8_t cPRESET_20ma_COUNT;           
+  uint8_t cPRESET_ENABLE;               
+  uint8_t cSET_CAL;                    
+  uint8_t cSET_CONFIG;                 
+  uint8_t cREAD_RANGEA;
+  uint8_t cREAD_RANGEB;
+  uint8_t cREAD_RANGEC;
+  uint8_t cREAD_RANGED;
+  uint8_t cWRITE_RANGEA;
+  uint8_t cWRITE_RANGEB;
+  uint8_t cWRITE_RANGEC;
+  uint8_t cWRITE_RANGED;
+  uint8_t cidentify;
+
+  uint8_t cREAD_SEM160_CAL;
+  uint8_t cREAD_SEM160_CONFIG;
+  uint8_t cREAD_SEM160_ALIGNMENT;
+  uint8_t cREAD_SEM160_PROCESS;
+  uint8_t cREAD_SEM160_DEVICE;
+  uint8_t cPRESET_ch2_4ma_COUNT;
+  uint8_t cPRESET_ch2_12ma_COUNT;
+  uint8_t cPRESET_ch2_20ma_COUNT;
+  uint8_t cPRESET_ch2_ENABLE;
+
+  uint8_t cALIGN_RH_1;
+  uint8_t cALIGN_RH_2;
+  uint8_t cALIGN_T_1;
+  uint8_t cALIGN_T_2;
+
+  uint8_t cWRITE_SEM160_CALIBRATION;
+  uint8_t cWRITE_SEM160_CONFIG;
+  uint8_t cWRITE_SEM160_ALIGNMENT;
+  uint8_t cWRITE_SEM160_DEVICE;
+
+  uint8_t cWRITE_TTR_4_5MA_CAL;
+  uint8_t cWRITE_TTR_19_5MA_CAL;
+  uint8_t cWRITE_TTR_1_5V_CAL;
+  uint8_t cWRITE_TTR_9_5V_CAL;
+  uint8_t cWRITE_TTx200_IN_GAIN_1;
+  uint8_t cWRITE_TTx200_IN_GAIN_2;
+  uint8_t cWRITE_TTx200_IN_GAIN_4;
+
+  uint8_t cWRITE_BLOCK_2_0_MA_CAL;
+  uint8_t cWRITE_BLOCK_19_5_MA_CAL;
+  uint8_t cWRITE_BLOCK_0_V_CAL;
+  uint8_t cWRITE_BLOCK_10V_CAL;
+  uint8_t cWRITE_BLOCK_CALIBRATION;
+  uint8_t cREAD_BLOCK_CALIBRATION;
+  uint8_t cWRITE_block_INPUT_CONFIG;
+  uint8_t cWRITE_BLOCK_OUTPUT_CONFIG;
+  uint8_t cREAD_BLOCK_INPUT_CONFIG;
+  uint8_t cREAD_BLOCK_OUTPUT_CONFIG;
+  uint8_t cREAD_BLOCK_PROCESS;
+
+  uint8_t cWRITE_DM2000_CONFIG;
+  uint8_t cREAD_DM2000_CONFIG;
+  uint8_t cRESET_TOTAL;
+} SEM_COMMANDS;
+
+void SEM_COMMANDS_init(SEM_COMMANDS *sem_commands)
+{
+  sem_commands->cACK = 0xA;
+  sem_commands->cNAK = 0xB;
+  sem_commands->cREAD_CAL = 0x0;
+  sem_commands->cREAD_CONFIG = 0x1;
+  sem_commands->cREAD_PROCESS = 0x2;
+  sem_commands->cSELF_CAL_0mv = 0x3;
+  sem_commands->cSELF_CAL_50mv = 0x4;
+  sem_commands->cSELF_CAL_100R = 0x30;
+  sem_commands->cSELF_CAL_300R = 0x31;
+  sem_commands->cSELF_CAL_20mA = 0x32;
+  sem_commands->cSELF_CAL_0mA = 0x33;  
+  sem_commands->cSELF_CAL_200mV = 0x34;
+  sem_commands->cSELF_CAL_1V = 0x35;
+  sem_commands->cSELF_CAL_10V = 0x36;
+  sem_commands->cSELF_CAL_slide_wire = 0x37;
+  sem_commands->cPRESET_4ma_COUNT = 0x5;
+  sem_commands->cPRESET_12ma_COUNT = 0x6;
+  sem_commands->cPRESET_20ma_COUNT = 0x7;
+  sem_commands->cPRESET_ENABLE = 0x8;
+  sem_commands->cSET_CAL = 0x10;
+  sem_commands->cSET_CONFIG = 0x11;
+  sem_commands->cREAD_RANGEA = 0x50;
+  sem_commands->cREAD_RANGEB = 0x51;
+  sem_commands->cREAD_RANGEC = 0x52;
+  sem_commands->cREAD_RANGED = 0x53;
+  sem_commands->cWRITE_RANGEA = 0x40;
+  sem_commands->cWRITE_RANGEB = 0x41;
+  sem_commands->cWRITE_RANGEC = 0x42;
+  sem_commands->cWRITE_RANGED = 0x43;
+  sem_commands->cidentify = 0x60;
+
+  sem_commands->cREAD_SEM160_CAL = 0x60;
+  sem_commands->cREAD_SEM160_CONFIG = 0x61;
+  sem_commands->cREAD_SEM160_ALIGNMENT = 0x62;
+  sem_commands->cREAD_SEM160_PROCESS = 0x63;
+  sem_commands->cREAD_SEM160_DEVICE = 0x64;
+  sem_commands->cPRESET_ch2_4ma_COUNT = 0x70;
+  sem_commands->cPRESET_ch2_12ma_COUNT = 0x71;
+  sem_commands->cPRESET_ch2_20ma_COUNT = 0x72;
+  sem_commands->cPRESET_ch2_ENABLE = 0x73;
+
+  sem_commands->cALIGN_RH_1 = 0x65;
+  sem_commands->cALIGN_RH_2 = 0x66;
+  sem_commands->cALIGN_T_1 = 0x67;
+  sem_commands->cALIGN_T_2 = 0x68;
+
+  sem_commands->cWRITE_SEM160_CALIBRATION = 0x6A;
+  sem_commands->cWRITE_SEM160_CONFIG = 0x6B;
+  sem_commands->cWRITE_SEM160_ALIGNMENT = 0x6C;
+  sem_commands->cWRITE_SEM160_DEVICE = 0x6D;
+
+  sem_commands->cWRITE_TTR_4_5MA_CAL = 0xA3;
+  sem_commands->cWRITE_TTR_19_5MA_CAL = 0xA4;
+  sem_commands->cWRITE_TTR_1_5V_CAL = 0xA5;
+  sem_commands->cWRITE_TTR_9_5V_CAL = 0xA6;
+  sem_commands->cWRITE_TTx200_IN_GAIN_1 = 0x30;
+  sem_commands->cWRITE_TTx200_IN_GAIN_2 = 0x31;
+  sem_commands->cWRITE_TTx200_IN_GAIN_4 = 0xA7;
+
+  sem_commands->cWRITE_BLOCK_2_0_MA_CAL = 0xA3;
+  sem_commands->cWRITE_BLOCK_19_5_MA_CAL = 0xA4;
+  sem_commands->cWRITE_BLOCK_0_V_CAL = 0xA5;
+  sem_commands->cWRITE_BLOCK_10V_CAL = 0xA6;
+  sem_commands->cWRITE_BLOCK_CALIBRATION = 0xA0;
+  sem_commands->cREAD_BLOCK_CALIBRATION = 0xA8;
+  sem_commands->cWRITE_block_INPUT_CONFIG = 0xA1;
+  sem_commands->cWRITE_BLOCK_OUTPUT_CONFIG = 0xA2;
+  sem_commands->cREAD_BLOCK_INPUT_CONFIG = 0xA9;
+  sem_commands->cREAD_BLOCK_OUTPUT_CONFIG = 0xAA;
+  sem_commands->cREAD_BLOCK_PROCESS = 0x2;
+
+  sem_commands->cWRITE_DM2000_CONFIG = 0x7B;
+
+  sem_commands->cREAD_DM2000_CONFIG = 0x81;
+
+  sem_commands->cRESET_TOTAL = 0xF0;
+}
 
 int detach_device_kernel(int vendor_id, int product_id) 
 {
@@ -79,9 +236,10 @@ int detach_device_kernel(int vendor_id, int product_id)
 
 int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
 
-  // now use FTD2XX to open the device
+  // use FTD2XX to open the device; this open device function simply opens the
+  // first device it finds with the given vendor and product id, and cannot
+  // differentiate between them.
   FT_STATUS ftStatus;
-  FT_DEVICE_LIST_INFO_NODE *pDest = NULL;
   DWORD dwNumDevs;
 
   ftStatus = FT_SetVIDPID((DWORD) vendor_id, (DWORD) product_id);
@@ -93,12 +251,6 @@ int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
   ftStatus = FT_CreateDeviceInfoList(&dwNumDevs);
   if (ftStatus != FT_OK) {
     printf("Error: FT_CreateDeviceInfoList(%d)\n", (int) ftStatus);
-    return -1;
-  }
-
-  ftStatus = FT_GetDeviceInfoList(pDest, &dwNumDevs);
-  if (ftStatus != FT_OK) {
-    printf("Error: FT_ListDevices(%d)\n", (int) ftStatus);
     return -1;
   }
 
@@ -132,6 +284,7 @@ int prepare_device(FT_HANDLE ftHandle)
 
   ftStatus = FT_SetDataCharacteristics(ftHandle, 8, 0, 0);
   /*
+    args following ftHandle:
     FT_DATA_BITS_8 == 8
     FT_STOP_BITS_1 == 0
     FT_PARITY_NONE == 0
@@ -166,8 +319,12 @@ int prepare_device(FT_HANDLE ftHandle)
 
 uint16_t make_crc(uint8_t *byte_array, int end_position)
 {
+  // make a cyclic redundancy check for the given byte array; this is per the
+  // rules found in the SEM710 specifications provided by Status Instruments; 
+  // the polynomial 0xA001 doesn't appear to conform to any international
+  // crc standard.
   int i;
-  uint16_t CRC;
+  uint16_t crc;
   char j;
   char char_in;
   int lsBit;
@@ -181,67 +338,79 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
     Data
   */
 
-  CRC = 0xFFFF;
+  crc = 0xFFFF;
   for (i = 1; i <= end_position; i++) {
     char_in = byte_array[i];
-    CRC = CRC ^ char_in;
+    crc = crc ^ char_in;
     for (j = 0; j < 8; j++) {
-      lsBit = CRC & 1;
-      CRC = CRC >> 1;
+      lsBit = crc & 1;
+      crc = crc >> 1;
       if (lsBit == 1) {
-	CRC = CRC ^ 0xA001;
+	crc = crc ^ 0xA001;
       }
     }
   }
-  return CRC;
+  return crc;
 }
 
 int crc_pass(uint8_t *rx_data, DWORD rx_pointer) 
 {
+  // returns whether the received crc is the same as the calculated crc from
+  // the byte array passed by the USB device; if it is not, then something
+  // caused the transfer to fail.
   uint16_t calculated_crc = make_crc(rx_data, rx_pointer - 2);
   uint16_t rx_crc = (rx_data[rx_pointer] << 8) + (rx_data[rx_pointer - 1]);
 
   return (calculated_crc == rx_crc);
 }
 
-void generate_read_message(uint8_t byte_array[6])
+int generate_message(uint8_t COMMAND, uint8_t* byte_array,
+		     int byte_array_upper_index) 
 {
-  // Fill the given byte array with bytes corresponding to instructions to the
-  // SEM710 to read its current temperature measurement
-
+  // Generate a message to send to the device, based on the given command and
+  // byte array
+  uint8_t *output;
+  int i = 0;
+  uint8_t x;
   uint16_t crc;
-  uint16_t lbyte;
-  uint16_t rbyte;
+  uint8_t lbyte;
+  uint8_t rbyte;
 
-  // Start Byte:
-  byte_array[0] = 0x55;
+  // start byte
+  output[i] = 0x55;
   
-  // Command (cREAD_PROCESS):
-  byte_array[1] = 0x02; 
+  // command
+  output[++i] = COMMAND;
 
-  // number of elements in byte_array at the time of input; according to the
-  // specifications provided by Status Instruments, this byte_array should have
-  // one 0 byte in its first index value, so fill the array accordingly.
-  byte_array[2] = 0;
-  byte_array[3] = 0;
+  // length
+  output[++i] = byte_array_upper_index;
+  i = 2;
+  for (x = 0; x <= byte_array_upper_index; x++) {
+    i = i + 1;
+    output[i] = byte_array[x];
+  }
 
-  // cyclic redundancy check:
-  crc = make_crc(byte_array, 3);
+  // crc
+  crc = make_crc(output, i);
   lbyte = (crc >> 8);
   rbyte = (crc) & 0xFF;
 
   // put CRC on byte_array, little Endian
-  byte_array[4] = rbyte;
-  byte_array[5] = lbyte;
+  output[++i] = rbyte;
+  output[++i] = lbyte;
 
-  // End byte
-  byte_array[6] = 0xAA;
+  // add end byte;
+  output[++i] = 0xAA;
+  for (x = 0; x <= i; x++) {
+    byte_array[x] = output[x];
+  }
+  return 0;
 }
 
-int send_and_receive_bytes(uint8_t* byte_array, int byte_array_size, 
-			   FT_HANDLE ftHandle, uint8_t* output_array)
+int send_bytes(uint8_t* byte_array, int byte_array_size, 
+	       FT_HANDLE ftHandle, uint8_t* output_array)
 {
-  // uint8_t timeout;
+  // transmit the given byte array to the USB device and await a reply
   DWORD q_status;
   uint8_t read_buff[280];
   uint8_t retry_counter = 4;
@@ -433,28 +602,34 @@ int main()
   //////////////////////////////////////////
   // Communication to server unimplemented//
   //////////////////////////////////////////
-
   printf("Device prepared.\n");
 
-  // 3: await instructions
+  //////////////////////////////////////////
+  // 3: await instructions (skip for now) //
+  //////////////////////////////////////////
+  
+  //////////////////////////////
+  // 4: read data from SEM710 //
+  //////////////////////////////
 
-  // 4: read data from SEM710
   int i;
-  uint8_t byte_array[6];
+  uint8_t* byte_array;
   uint8_t *response_array;
   int rw_failed;
   FT_STATUS ftStatus;
+  SEM_COMMANDS sem_commands;
+  SEM_COMMANDS_init(&sem_commands);
   // long intArray[3];
 
-  generate_read_message(byte_array);
-  printf("Message: [");
-  printf("%u,", byte_array[0]);
+  byte_array[0] = 0;
+  generate_message(sem_commands.cREAD_PROCESS, byte_array, 0);
+  printf("Message: [%u,", byte_array[0]);
   for (i = 1; i < 6; i++) {
     printf(" %u,", byte_array[i]);
   }
   printf(" %u]\n", byte_array[6]);
 
-  rw_failed = send_and_receive_bytes(byte_array, 7, ftHandle, response_array);
+  rw_failed = send_bytes(byte_array, 7, ftHandle, response_array);
   if (rw_failed || response_array[1] != 34) {
     printf("Problem reading or writing data to device.\n");
     FT_Close(ftHandle);
@@ -468,7 +643,7 @@ int main()
   readings.PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
   readings.MA_OUT = float_from_byte_array(response_array, 15);
   readings.CJ_TEMP = float_from_byte_array(response_array, 19);
-  
+
   // 4.5: transmit data from SEM710
 
   printf("Device ADC reading: %f\n", readings.ADC_VALUE);
