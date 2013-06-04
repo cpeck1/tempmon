@@ -8,202 +8,15 @@
 #include <time.h>
 #include "./ftd2xx/ftd2xx.h"
 #include "devstats.c"
-
+#include "devtypes.h"
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
 
+#define L_ENDIAN (get_endianness() == 0)
+#define B_ENDIAN (get_endianness() == 1)
+
 #define SEM710_BAUDRATE 19200
-
-typedef enum { 
-  WAITING_FOR_START, 
-  WAITING_FOR_REPLY_START, 
-  WAITING_FOR_COMMAND, 
-  WAITING_FOR_LEN, 
-  WAITING_FOR_DATA, 
-  WAITING_FOR_CRC_LO, 
-  WAITING_FOR_CRC_HI, 
-  WAITING_FOR_END,
-  RX_OVERFLOW
-} RX_FRAMING;
-
-typedef enum {
-  WAITING,
-  GET_FUNCTION,
-  GET_CODE,
-  start_address,
-  NO_BYTES,
-  GET_BYTES,
-  GET_CRC_LOW,
-  GET_CRC_HIGH,
-  ENGAGED,
-  MESSAGE_NOT_VALID,
-} COMMS_RX_STATE;
-
-typedef struct {
-  float ADC_VALUE;
-  float ELEC_VALUE;
-  float PROCESS_VARIABLE;
-  float MA_OUT;
-  float CJ_TEMP;
-} SEM710_READINGS;
-
-typedef struct {
-  uint8_t cACK;
-  uint8_t cNAK;
-  uint8_t cREAD_CAL;                    
-  uint8_t cREAD_CONFIG;
-  uint8_t cREAD_PROCESS;                 
-  uint8_t cSELF_CAL_0mv;                
-  uint8_t cSELF_CAL_50mv;               
-  uint8_t cSELF_CAL_100R;              
-  uint8_t cSELF_CAL_300R;              
-  uint8_t cSELF_CAL_20mA;              
-  uint8_t cSELF_CAL_0mA;               
-  uint8_t cSELF_CAL_200mV;             
-  uint8_t cSELF_CAL_1V;                
-  uint8_t cSELF_CAL_10V;               
-  uint8_t cSELF_CAL_slide_wire;        
-  uint8_t cPRESET_4ma_COUNT;            
-  uint8_t cPRESET_12ma_COUNT;           
-  uint8_t cPRESET_20ma_COUNT;           
-  uint8_t cPRESET_ENABLE;               
-  uint8_t cSET_CAL;                    
-  uint8_t cSET_CONFIG;                 
-  uint8_t cREAD_RANGEA;
-  uint8_t cREAD_RANGEB;
-  uint8_t cREAD_RANGEC;
-  uint8_t cREAD_RANGED;
-  uint8_t cWRITE_RANGEA;
-  uint8_t cWRITE_RANGEB;
-  uint8_t cWRITE_RANGEC;
-  uint8_t cWRITE_RANGED;
-  uint8_t cidentify;
-
-  uint8_t cREAD_SEM160_CAL;
-  uint8_t cREAD_SEM160_CONFIG;
-  uint8_t cREAD_SEM160_ALIGNMENT;
-  uint8_t cREAD_SEM160_PROCESS;
-  uint8_t cREAD_SEM160_DEVICE;
-  uint8_t cPRESET_ch2_4ma_COUNT;
-  uint8_t cPRESET_ch2_12ma_COUNT;
-  uint8_t cPRESET_ch2_20ma_COUNT;
-  uint8_t cPRESET_ch2_ENABLE;
-
-  uint8_t cALIGN_RH_1;
-  uint8_t cALIGN_RH_2;
-  uint8_t cALIGN_T_1;
-  uint8_t cALIGN_T_2;
-
-  uint8_t cWRITE_SEM160_CALIBRATION;
-  uint8_t cWRITE_SEM160_CONFIG;
-  uint8_t cWRITE_SEM160_ALIGNMENT;
-  uint8_t cWRITE_SEM160_DEVICE;
-
-  uint8_t cWRITE_TTR_4_5MA_CAL;
-  uint8_t cWRITE_TTR_19_5MA_CAL;
-  uint8_t cWRITE_TTR_1_5V_CAL;
-  uint8_t cWRITE_TTR_9_5V_CAL;
-  uint8_t cWRITE_TTx200_IN_GAIN_1;
-  uint8_t cWRITE_TTx200_IN_GAIN_2;
-  uint8_t cWRITE_TTx200_IN_GAIN_4;
-
-  uint8_t cWRITE_BLOCK_2_0_MA_CAL;
-  uint8_t cWRITE_BLOCK_19_5_MA_CAL;
-  uint8_t cWRITE_BLOCK_0_V_CAL;
-  uint8_t cWRITE_BLOCK_10V_CAL;
-  uint8_t cWRITE_BLOCK_CALIBRATION;
-  uint8_t cREAD_BLOCK_CALIBRATION;
-  uint8_t cWRITE_block_INPUT_CONFIG;
-  uint8_t cWRITE_BLOCK_OUTPUT_CONFIG;
-  uint8_t cREAD_BLOCK_INPUT_CONFIG;
-  uint8_t cREAD_BLOCK_OUTPUT_CONFIG;
-  uint8_t cREAD_BLOCK_PROCESS;
-
-  uint8_t cWRITE_DM2000_CONFIG;
-  uint8_t cREAD_DM2000_CONFIG;
-  uint8_t cRESET_TOTAL;
-} SEM_COMMANDS;
-
-void SEM_COMMANDS_init(SEM_COMMANDS *sem_commands)
-{
-  sem_commands->cACK = 0xA;
-  sem_commands->cNAK = 0xB;
-  sem_commands->cREAD_CAL = 0x0;
-  sem_commands->cREAD_CONFIG = 0x1;
-  sem_commands->cREAD_PROCESS = 0x2;
-  sem_commands->cSELF_CAL_0mv = 0x3;
-  sem_commands->cSELF_CAL_50mv = 0x4;
-  sem_commands->cSELF_CAL_100R = 0x30;
-  sem_commands->cSELF_CAL_300R = 0x31;
-  sem_commands->cSELF_CAL_20mA = 0x32;
-  sem_commands->cSELF_CAL_0mA = 0x33;  
-  sem_commands->cSELF_CAL_200mV = 0x34;
-  sem_commands->cSELF_CAL_1V = 0x35;
-  sem_commands->cSELF_CAL_10V = 0x36;
-  sem_commands->cSELF_CAL_slide_wire = 0x37;
-  sem_commands->cPRESET_4ma_COUNT = 0x5;
-  sem_commands->cPRESET_12ma_COUNT = 0x6;
-  sem_commands->cPRESET_20ma_COUNT = 0x7;
-  sem_commands->cPRESET_ENABLE = 0x8;
-  sem_commands->cSET_CAL = 0x10;
-  sem_commands->cSET_CONFIG = 0x11;
-  sem_commands->cREAD_RANGEA = 0x50;
-  sem_commands->cREAD_RANGEB = 0x51;
-  sem_commands->cREAD_RANGEC = 0x52;
-  sem_commands->cREAD_RANGED = 0x53;
-  sem_commands->cWRITE_RANGEA = 0x40;
-  sem_commands->cWRITE_RANGEB = 0x41;
-  sem_commands->cWRITE_RANGEC = 0x42;
-  sem_commands->cWRITE_RANGED = 0x43;
-  sem_commands->cidentify = 0x60;
-
-  sem_commands->cREAD_SEM160_CAL = 0x60;
-  sem_commands->cREAD_SEM160_CONFIG = 0x61;
-  sem_commands->cREAD_SEM160_ALIGNMENT = 0x62;
-  sem_commands->cREAD_SEM160_PROCESS = 0x63;
-  sem_commands->cREAD_SEM160_DEVICE = 0x64;
-  sem_commands->cPRESET_ch2_4ma_COUNT = 0x70;
-  sem_commands->cPRESET_ch2_12ma_COUNT = 0x71;
-  sem_commands->cPRESET_ch2_20ma_COUNT = 0x72;
-  sem_commands->cPRESET_ch2_ENABLE = 0x73;
-
-  sem_commands->cALIGN_RH_1 = 0x65;
-  sem_commands->cALIGN_RH_2 = 0x66;
-  sem_commands->cALIGN_T_1 = 0x67;
-  sem_commands->cALIGN_T_2 = 0x68;
-
-  sem_commands->cWRITE_SEM160_CALIBRATION = 0x6A;
-  sem_commands->cWRITE_SEM160_CONFIG = 0x6B;
-  sem_commands->cWRITE_SEM160_ALIGNMENT = 0x6C;
-  sem_commands->cWRITE_SEM160_DEVICE = 0x6D;
-
-  sem_commands->cWRITE_TTR_4_5MA_CAL = 0xA3;
-  sem_commands->cWRITE_TTR_19_5MA_CAL = 0xA4;
-  sem_commands->cWRITE_TTR_1_5V_CAL = 0xA5;
-  sem_commands->cWRITE_TTR_9_5V_CAL = 0xA6;
-  sem_commands->cWRITE_TTx200_IN_GAIN_1 = 0x30;
-  sem_commands->cWRITE_TTx200_IN_GAIN_2 = 0x31;
-  sem_commands->cWRITE_TTx200_IN_GAIN_4 = 0xA7;
-
-  sem_commands->cWRITE_BLOCK_2_0_MA_CAL = 0xA3;
-  sem_commands->cWRITE_BLOCK_19_5_MA_CAL = 0xA4;
-  sem_commands->cWRITE_BLOCK_0_V_CAL = 0xA5;
-  sem_commands->cWRITE_BLOCK_10V_CAL = 0xA6;
-  sem_commands->cWRITE_BLOCK_CALIBRATION = 0xA0;
-  sem_commands->cREAD_BLOCK_CALIBRATION = 0xA8;
-  sem_commands->cWRITE_block_INPUT_CONFIG = 0xA1;
-  sem_commands->cWRITE_BLOCK_OUTPUT_CONFIG = 0xA2;
-  sem_commands->cREAD_BLOCK_INPUT_CONFIG = 0xA9;
-  sem_commands->cREAD_BLOCK_OUTPUT_CONFIG = 0xAA;
-  sem_commands->cREAD_BLOCK_PROCESS = 0x2;
-
-  sem_commands->cWRITE_DM2000_CONFIG = 0x7B;
-
-  sem_commands->cREAD_DM2000_CONFIG = 0x81;
-
-  sem_commands->cRESET_TOTAL = 0xF0;
-}
 
 int detach_device_kernel(int vendor_id, int product_id) 
 {
@@ -218,6 +31,10 @@ int detach_device_kernel(int vendor_id, int product_id)
   libusb_device_handle *handle = NULL;
 
   handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
+  if (handle == NULL) {
+    printf("Error opening device: device missing.\n");    
+    return -1;
+  }
   
   if (libusb_kernel_driver_active(handle, 0)) {
     printf("Kernel driver already attached. Detaching...\n");
@@ -234,38 +51,38 @@ int detach_device_kernel(int vendor_id, int product_id)
   return 0;
 }
 
-int open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
+FT_STATUS open_device(FT_HANDLE *ftHandle, int vendor_id, int product_id) {
 
   // use FTD2XX to open the device; this open device function simply opens the
   // first device it finds with the given vendor and product id, and cannot
-  // differentiate between them.
+  // differentiate between multiple devices with the same vID and pID
   FT_STATUS ftStatus;
   DWORD dwNumDevs;
 
   ftStatus = FT_SetVIDPID((DWORD) vendor_id, (DWORD) product_id);
   if (ftStatus != FT_OK) {
-    printf("Problem setting vID and pID\n");
-    return -1;
+    printf("Error: FT_SetVIDPID(%d)\n", (int) ftStatus);
+    return ftStatus;
   }
 
   ftStatus = FT_CreateDeviceInfoList(&dwNumDevs);
   if (ftStatus != FT_OK) {
     printf("Error: FT_CreateDeviceInfoList(%d)\n", (int) ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_Open(0, ftHandle);
   if (ftStatus != FT_OK) {
-    printf("Error: FT_Open(%d)\n", ftStatus);
-    return -1;
+    printf("Error: FT_Open(%d)\n", (int) ftStatus);
+    return ftStatus;
   }
 
   // open successful
-  return 0;
+  return FT_OK;
 }
 
 
-int prepare_device(FT_HANDLE *ftHandle) 
+FT_STATUS prepare_device(FT_HANDLE *ftHandle) 
 {
   // prepare the device for communication, per the specifications provided by
   // Status Instruments about the attributes of the SEM710
@@ -273,13 +90,13 @@ int prepare_device(FT_HANDLE *ftHandle)
   ftStatus = FT_ResetDevice(*ftHandle);
   if (ftStatus != FT_OK) {
     printf("Error: FT_ResetDevice(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_SetBaudRate(*ftHandle, SEM710_BAUDRATE);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetBaudRate(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_SetDataCharacteristics(*ftHandle, 8, 0, 0);
@@ -291,28 +108,28 @@ int prepare_device(FT_HANDLE *ftHandle)
   */
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetDataCharacteristics(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_SetFlowControl(*ftHandle, 0x00, 0, 0);
   // FT_FLOW_NONE == &H0 == 0x00
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetFlowControl(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_SetTimeouts(*ftHandle, 250, 250);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetTimeouts(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
 
   ftStatus = FT_SetLatencyTimer(*ftHandle, 3);
   if (ftStatus != FT_OK) {
     printf("Error: FT_SetLatencyTimer(%d)\n", ftStatus);
-    return -1;
+    return ftStatus;
   }
-  return 0;
+  return FT_OK;
 }
 
 
@@ -404,6 +221,55 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
   }
 
   return (i + 1);
+}
+
+int generate_block_message(uint8_t device_address, int command, 
+			   uint8_t byte_count, long block_address, 
+			   uint8_t *byte_array, uint8_t read)
+{
+  // generate a block message and return the length of said block message
+  uint8_t output[280];
+
+  int i = 0;
+  uint8_t x = 0;
+
+  uint16_t crc;
+  uint8_t lbyte;
+  uint8_t rbyte;
+
+  long temp;
+
+  // data enters in the byte_array
+  output[0] = device_address;
+  output[1] = command;
+  
+  output[2] = byte_count;
+  // start address Msb then lsb
+  temp = block_address & 0xFF00;
+  output[4] = block_address - (temp);
+  output[3] = temp / (2 << 8);
+
+  i = 4;
+  if (!read) {
+    for (x = 0; x < byte_count; x++) {
+      i++;
+      output[i] = byte_array[x];
+    }
+  }
+  
+  crc = make_crc(output, i);
+  lbyte = (crc >> 8);
+  rbyte = (crc) & 0xFF;
+
+  // put CRC on byte_array, little Endian
+  output[++i] = rbyte;
+  output[++i] = lbyte;
+
+  for (x = 0; x <= i; x++) {
+    byte_array[x] = output[x];
+  }
+
+  return i + 1;
 }
 
 int send_bytes(uint8_t* byte_array, int byte_array_size, 
@@ -542,18 +408,175 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
   return (!message_received);
 }
 
+int send_block_message(uint8_t *byte_array, int byte_array_size, 
+		       uint8_t device_address, FT_HANDLE *ftHandle,
+		       uint8_t *output_array)
+{
+  time_t start;
+  time_t expire;
+
+  DWORD q_status;
+  uint8_t read_buff[280];
+  uint8_t retry_counter = 4;
+
+  uint8_t i, j;
+  int count;
+  uint8_t rx_byte;
+  uint8_t byte_count;
+  uint8_t message_received;
+  COMMS_RX_STATE rx_frame;
+  uint8_t rx_data[280];
+  int rx_pointer = 0;
+  FT_STATUS ftStatus;
+  DWORD bytes_written;
+  DWORD bytes_to_read = 262;
+  
+  while (retry_counter) {
+    usleep(50000); // 50 ms
+    time(&start);
+    time(&expire);
+    message_received = 0;
+    q_status = 0;
+    rx_frame = WAITING;
+
+    // implement:
+    ftStatus = FT_Write(*ftHandle, byte_array, byte_array_size, &bytes_written);
+    if (ftStatus != FT_OK) {
+      printf("Error FT_Write(%d)\n.", ftStatus);
+      return 1;
+    }
+    printf("Bytes written: %d\n", bytes_written);
+    usleep(200000); // 200 ms
+    while ((difftime(expire, start) < 2.5) && (!message_received)) {
+      ftStatus = FT_GetQueueStatus(*ftHandle, &q_status);
+      if (ftStatus != FT_OK) {
+	printf("Error FT_GetQueueStatus(%d)\n", ftStatus);
+	return -1;
+      }
+      if (q_status != 0) { // then there is something to read
+	ftStatus = FT_Read(*ftHandle, read_buff, bytes_to_read, &q_status);
+	if (ftStatus != FT_OK) {
+	  printf("Error FT_Read(%d)\n", ftStatus);
+	  return -1;
+	}
+	usleep(50000); // 50 ms
+	for (i = 0; i <= q_status; i++) {
+	  rx_byte = read_buff[i];
+	  if (rx_frame == WAITING) {
+	    if (rx_byte == device_address) {
+	      rx_pointer = 0;
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      rx_frame = GET_FUNCTION;
+	      count = 0;
+	    }
+	  }
+	  else if (rx_frame == GET_FUNCTION) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    if (rx_byte > 127) {
+	      rx_frame = GET_CODE;
+	    }
+	    else {
+	      rx_frame = NO_BYTES;
+	    }
+	  }
+	  else if (rx_frame == GET_CODE) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = GET_CRC_LOW;
+	  }
+	  else if (rx_frame == NO_BYTES) {
+	    byte_count = rx_byte;
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = GET_BYTES;
+	  }
+	  else if (rx_frame == GET_BYTES) {
+	    if (count < byte_count) {
+	      count = count + 1;
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	    }
+	    else {
+	      rx_data[rx_pointer] = rx_byte;
+	      rx_pointer = rx_pointer + 1;
+	      rx_frame = GET_CRC_HIGH;
+	    }
+	  }
+	  else if (rx_frame == GET_CRC_LOW) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = GET_CRC_HIGH;
+	  }
+	  else if (rx_frame == GET_CRC_HIGH) {
+	    rx_data[rx_pointer] = rx_byte;
+	    rx_pointer = rx_pointer + 1;
+	    rx_frame = ENGAGED;
+	    if (!crc_pass(rx_data, rx_pointer)) {
+	      printf("CRC failed. Message did not transmit properly.\n");
+	      return -1;
+	    }
+	    else {
+	      for (j = 0; j < rx_pointer; j++) {
+		output_array[j] = rx_data[j];
+	      }
+	      message_received = 1;
+	    }
+	  }
+	} // end for (q_status condition)
+      } // end if(q_status condition)
+      time(&expire);
+    } // end while(time condition)
+    if (!message_received) {
+      retry_counter = retry_counter - 1;
+      ftStatus = FT_Purge(*ftHandle, FT_PURGE_TX & FT_PURGE_RX);
+    }
+  } // end while(retry condition)
+  return (!message_received);
+}
+
 float float_from_byte_array(uint8_t *byte_array, int start_index)
 {
   // bytes are stored little Endian, so reverse first
   int i;
   float f1;
-  uint8_t chars[4];
+  int size = (int) sizeof(float);
+  uint8_t chars[size];
 
-  for (i = 0; i < 4; i++) {
-    chars[3-i] = byte_array[start_index + i];
+  if (B_ENDIAN) {
+    for (i = 0; i < size; i++) {
+      chars[(size-1) - i] = byte_array[start_index + i];
+    }
+    f1 = *((float *)(&chars[0]));
   }
-  f1 = *((float *)(&chars[0]));
+  else {
+    f1 = *((float *)(&byte_array[start_index]));
+  }
   return f1;
+}
+
+uint16_t short_from_byte_array(uint8_t *byte_array, int start_index)
+{
+  int i;
+  short s1;
+  int size = (int) sizeof(short);
+  uint8_t chars[size];
+
+  // byte_array = {14, 23} 
+  // chars[1] = start_index[0]; chars[0] = start_index[1]
+  // chars == [23, 14]
+  
+  if (B_ENDIAN) {
+    for (i = 0; i < size; i++) {
+      chars[(size-1) - i] = byte_array[start_index + i];
+    }
+    s1 = *((short *)(&chars[0]));
+  }
+  else {
+    s1 = *((short *)(&byte_array[start_index]));
+  }
+  return s1;
 }
 
 int SEM710_read_process(FT_HANDLE *ftHandle, SEM710_READINGS *readings)
@@ -563,29 +586,106 @@ int SEM710_read_process(FT_HANDLE *ftHandle, SEM710_READINGS *readings)
   int len;
   uint8_t response_array[256];
   int rw_failed;
-  SEM_COMMANDS sem_commands;
-  SEM_COMMANDS_init(&sem_commands);
 
   byte_array[0] = 0;
-  len = generate_message(sem_commands.cREAD_PROCESS, byte_array, 0);
+  len = generate_message(SEM_COMMANDS_cREAD_PROCESS, byte_array, 0);
   printf("Message: [%u,", byte_array[0]);
-  for (i = 1; i < len; i++) {
+  for (i = 1; i < len - 1; i++) {
     printf(" %u,", byte_array[i]);
   }
-  printf(" %u]\n", byte_array[len]);
+  printf(" %u]\n", byte_array[len - 1]);
 
   rw_failed = send_bytes(byte_array, len, ftHandle, response_array);
   if (rw_failed || response_array[1] != 34) {
     printf("Problem reading or writing data to device.\n");
     return -1;
   }
-
   // decode reply
   readings->ADC_VALUE = float_from_byte_array(response_array, 3);
   readings->ELEC_VALUE = float_from_byte_array(response_array, 7);
   readings->PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
   readings->MA_OUT = float_from_byte_array(response_array, 15);
   readings->CJ_TEMP = float_from_byte_array(response_array, 19);
+
+  return 0;
+}
+
+int SEM710_read_config_block(FT_HANDLE *ftHandle, CONFIG_BLOCK *cal, 
+		       uint8_t device_address)
+{
+  uint8_t byte_array[280];
+  uint8_t output_array[280];
+  byte_array[0] = 0;
+  int i;
+  int len;
+  int error;
+  
+  len = generate_block_message(device_address, COMMAND_FUNCTION_READ_DATA,
+			       0xEC, 0xE000, byte_array, 1);
+  error = send_block_message(byte_array, len, device_address, ftHandle, 
+			     output_array);
+  if (error) {
+    printf("Error sending block message\n");
+    return -1;
+  } 
+
+  CONFIG_BLOCK_init(cal);
+
+  for (i = 0; i < 48; i++) {
+    cal->fp[i] = float_from_byte_array(output_array, (i * 4) + 3);
+  }
+  for (i = 0; i < 4; i++) {
+    cal->config_input_float[i] = float_from_byte_array(output_array, 195+(i*4));
+  }
+  for (i = 0; i < 4; i++) {
+  }
+
+  return 0;
+}
+
+
+int SEM710_read_config(FT_HANDLE *ftHandle, CONFIG_DATA *cal)
+{
+  uint8_t byte_array[256];
+  int len = -1;
+  long i;
+  byte_array[0] = 0;
+  uint8_t response_array[256];
+  int rw_failed;
+
+  len = generate_message(SEM_COMMANDS_cREAD_CONFIG, byte_array, 0);
+  if (len == -1) {
+    printf("Failed to generate message.\n");
+    return -1;
+  }
+  printf("Message: [%u,", byte_array[0]);
+  for (i = 1; i < len - 1; i++) {
+    printf(" %u,", byte_array[i]);
+  }
+  printf(" %u]\n", byte_array[len - 1]);
+
+  rw_failed = send_bytes(byte_array, len, ftHandle, response_array);
+  if (rw_failed || (response_array[1] != 34)) {
+    printf("Problem reading or writing data to device.\n");
+    return -1;
+  }
+  
+  cal->tc_code = response_array[3];
+  cal->up_scale = response_array[4];
+  cal->units = response_array[5];
+  cal->model_type = response_array[6];
+  cal->vout_range = response_array[7];
+  cal->action_A = response_array[8];
+  cal->action_B = response_array[9];
+  cal->spare = response_array[10];
+  cal->low_range = float_from_byte_array(response_array, 11);
+  cal->high_range = float_from_byte_array(response_array, 15);
+  cal->low_trim = float_from_byte_array(response_array, 19);
+  cal->high_trim = float_from_byte_array(response_array, 23);
+  cal->setpoint_A = float_from_byte_array(response_array, 27);
+  cal->hyst_A = float_from_byte_array(response_array, 31);
+  cal->setpoint_B = float_from_byte_array(response_array, 35);
+  cal->hyst_B = float_from_byte_array(response_array, 39);
 
   return 0;
 }
@@ -603,7 +703,15 @@ int main()
     printf("Error: bad or missing device file\n");
     return 1;
   }
-
+  
+  uint8_t test[2] = {23, 14};
+  // 14 = 00001110 == [14, 23] = 0000111000010111
+  // 23 = 00010111 == [23, 14] = 0001011100001110
+  short tests = short_from_byte_array(test, 0);
+  printf("test[0]:%d\n", test[0]);
+  printf("test[1]:%d\n", test[1]);
+  printf("test:%d\n", tests);
+  
   //////////////////////////
   // 1: Connect to server //
   //////////////////////////
@@ -614,18 +722,18 @@ int main()
   // 2: Open SEM710 device //
   ///////////////////////////
   int detach_failed;
-  int open_failed;
-  int prep_failed;
+  FT_STATUS open_attempt;
+  FT_STATUS prep_attempt;
   FT_HANDLE ftHandle;
   
   detach_failed = detach_device_kernel(vendor_id, product_id);
   if (detach_failed) { return 1; }
   
-  open_failed = open_device(&ftHandle, vendor_id, product_id);
-  if (open_failed) { return 1; }
+  open_attempt = open_device(&ftHandle, vendor_id, product_id);
+  if (open_attempt) { return 1; }
 
-  prep_failed = prepare_device(&ftHandle);
-  if (prep_failed) { 
+  prep_attempt = prepare_device(&ftHandle);
+  if (prep_attempt) { 
     FT_Close(ftHandle);
     return 1; 
   }
@@ -647,6 +755,20 @@ int main()
   int read_failed;
   FT_STATUS ftStatus;
   SEM710_READINGS readings;
+  CONFIG_BLOCK block;
+  CONFIG_BLOCK_init(&block);
+  CONFIG_DATA cal;
+
+  read_failed = SEM710_read_config_block(&ftHandle, &block, 1);
+  if (read_failed) {
+    printf("Read config failure.\n");
+    CONFIG_BLOCK_destroy(&block);
+    FT_Close(ftHandle);
+    return 1;
+  }
+
+  read_failed = SEM710_read_config(&ftHandle, &cal);
+
   read_failed = SEM710_read_process(&ftHandle, &readings);
   if (read_failed) {
     printf("Read process failure.\n");
@@ -656,6 +778,9 @@ int main()
 
   // 4.5: transmit data from SEM710
 
+  //////////////////////////////////////////
+  // Communication to server unimplemented//
+  //////////////////////////////////////////
   printf("Device ADC reading: %f\n", readings.ADC_VALUE);
   printf("Device ELEC reading: %f\n", readings.ELEC_VALUE);
   printf("Device PROCESS reading: %f\n", readings.PROCESS_VARIABLE);
@@ -673,6 +798,7 @@ int main()
   else {
     printf("Device closed. Exiting...\n");
   }
+  CONFIG_BLOCK_destroy(&block);
   
   return 0;
 }
