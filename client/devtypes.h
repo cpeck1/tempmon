@@ -1,5 +1,9 @@
 #ifndef _DEVTYPES
 #define _DEVTYPES
+#include <stdlib.h>
+#include <stdint.h>
+
+#define SEM710_BAUDRATE 19200
 
 #define SEM_COMMANDS_cACK 0xA
 #define SEM_COMMANDS_cNAK 0xB
@@ -84,6 +88,8 @@
 #define COMMAND_FUNCTION_PRESET 17
 #define COMMAND_FUNCTION_CAL_OUT 18
 
+#define FT_DATA_BITS_8 8
+
 typedef enum { 
   WAITING_FOR_START, 
   WAITING_FOR_REPLY_START, 
@@ -157,7 +163,7 @@ void CONFIG_BLOCK_init(CONFIG_BLOCK *config_block)
   config_block->config_input_float = (float *) malloc(4);
   config_block->config_input_byte = (int *) malloc(4);
   config_block->title = (char *) malloc(16);
-  config_block->units = (char *) malloc(14);
+  config_block->units = (char *) malloc(4);
 }
 
 void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
@@ -168,19 +174,5 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->title);
   free(config_block->units);
 }
-
-int get_endianness()
-{
-   int a = 0x12345678;
-   unsigned char *c = (unsigned char*)(&a);
-   if (*c == 0x78) {
-      return 0;
-   }
-   else {
-      return 1;
-   }
-}
-
-
 
 #endif
