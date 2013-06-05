@@ -150,20 +150,44 @@ typedef struct {
 } CONFIG_DATA;
 
 typedef struct {
+  uint8_t straight_from_programming; // will always be 0, used on first power up
+  uint8_t dummy;
+  float lo_mv;
+  float hi_mv;
+  float lo_ma;
+  float hi_ma;
+  float lo_rtd;
+  float hi_rtd;
+  float lo_ma_in;
+  float hi_ma_in;
+  float hi_200mv_in;
+  float hi_1v_in;
+  float hi_10v_in;
+  float hi_cal_slide_wire;
+  float hi_voltage_output;
+} UNIVERSAL_CALIBRATION;
+
+typedef struct {
   float *fp;
   float *config_input_float;
-  int *config_input_byte;
+  short *config_input_byte;
   char *title;
   char *units;
+  float *config_output_floats;
+  short *config_output_int;
+  char *tag_number;
 } CONFIG_BLOCK;
 
 void CONFIG_BLOCK_init(CONFIG_BLOCK *config_block)
 {
-  config_block->fp = (float *) malloc(48);
-  config_block->config_input_float = (float *) malloc(4);
-  config_block->config_input_byte = (int *) malloc(4);
-  config_block->title = (char *) malloc(16);
-  config_block->units = (char *) malloc(4);
+  config_block->fp = (float *) malloc((sizeof(float)*48));
+  config_block->config_input_float = (float *) malloc(sizeof(float)*4);
+  config_block->config_input_byte = (short *) malloc(sizeof(short)*4);
+  config_block->title = (char *) malloc(sizeof(char)*16);
+  config_block->units = (char *) malloc(sizeof(char)*4);
+  config_block->config_output_floats = (float *) malloc(sizeof(float)*8);
+  config_block->config_output_int = (short *) malloc(sizeof(short)*4);
+  config_block->tag_number = (char *) malloc(sizeof(char)*20);
 }
 
 void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
@@ -174,5 +198,7 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->title);
   free(config_block->units);
 }
+
+
 
 #endif

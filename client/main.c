@@ -13,6 +13,12 @@
 #define MAX_DEVICES 1
 
 
+int floats_close(float flt1, float flt2) 
+{
+  float diff = flt2 - flt1;
+  return (fabs(diff) < 0.05);
+}
+
 int main()
 {
   // Get device ids from file:
@@ -20,7 +26,6 @@ int main()
   int vendor_id;
 
   int err = 0;
-
   err = get_device_ids(&product_id, &vendor_id);
   if (err) {
     printf("Error: bad or missing device file\n");
@@ -32,7 +37,7 @@ int main()
   //////////////////////////
 
   // unimplemented stub //
-
+ 
   ///////////////////////////
   // 2: Open SEM710 device //
   ///////////////////////////

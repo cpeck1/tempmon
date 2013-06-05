@@ -551,26 +551,25 @@ int SEM710_read_config_block(FT_HANDLE *ftHandle, CONFIG_BLOCK *cal,
   byte_array[0] = 0;
   int i;
   int len;
-  int error;
+  int err;
   
   len = generate_block_message(device_address, COMMAND_FUNCTION_READ_DATA,
 			       0xEC, 0xE000, byte_array, 1);
-
   printf("Message: [%u,", byte_array[0]);
   for (i = 1; i < len - 1; i++) {
     printf(" %u,", byte_array[i]);
   }
   printf(" %u]\n", byte_array[len - 1]);
 
-  error = send_block_message(byte_array, len, device_address, ftHandle, 
+  err = send_block_message(byte_array, len, device_address, ftHandle, 
 			     output_array);
-  if (error) {
+  if (err) {
     printf("Error sending block message\n");
     return -1;
   } 
 
+  // Decode reply:
   CONFIG_BLOCK_init(cal);
-
   for (i = 0; i < 48; i++) {
     cal->fp[i] = float_from_byte_array(output_array, (i * 4) + 3);
   }
@@ -580,9 +579,36 @@ int SEM710_read_config_block(FT_HANDLE *ftHandle, CONFIG_BLOCK *cal,
   for (i = 0; i < 4; i++) {
     cal->config_input_byte[i] = short_from_byte_array(output_array, 211+(i*2));
   }
-
   string_from_byte_array(output_array, cal->title, 219, 234);
   string_from_byte_array(output_array, cal->units, 235, 238);
+
+  // send another message :S
+  byte_array[0] = 0;
+  len = generate_block_message(device_address, COMMAND_FUNCTION_READ_DATA, 64,
+			       4096, byte_array, 1);
+  if (len <= 0) {
+    printf("Error generating message\n");
+    return -1;
+  }
+  err = send_block_message(byte_array, len, device_address, ftHandle, 
+			     output_array);
+  if (err) {
+    printf("Error sending block message\n");
+    return -1;
+  }
+  if (output_array[1] != 0x04) {
+    printf("Error sending block message: bad reply\n");
+    return -1;
+  }
+
+  // decode second reply:
+  for (i = 0; i < 8; i++) {
+    cal->config_output_floats[i] = float_from_byte_array(output_array, (i*4)+3);
+  }
+  for (i = 0; i < 4; i++) {
+    cal->config_output_int[i] =short_from_byte_array(output_array, 35+(i*2));
+  }
+  string_from_byte_array(output_array, cal->tag_number, 43, 62);
 
   return 0;
 }
@@ -629,6 +655,176 @@ int SEM710_read_config(FT_HANDLE *ftHandle, CONFIG_DATA *cal)
   cal->hyst_A = float_from_byte_array(response_array, 31);
   cal->setpoint_B = float_from_byte_array(response_array, 35);
   cal->hyst_B = float_from_byte_array(response_array, 39);
+
+  return 0;
+}
+
+int SEM710_write_config(FT_HANDLE *ftHandle, CONFIG_DATA *cal)
+{
+  uint8_t byte_array[41];
+  int i;
+  int len = -1;
+  uint8_t output_array[280];
+  int err;
+  
+  byte_array[0] = cal->tc_code;
+  byte_array[1] = cal->up_scale;
+  byte_array[2] = cal->units;
+  byte_array[3] = cal->model_type;
+  byte_array[4] = cal->vout_range;
+  byte_array[5] = cal->action_A;
+  byte_array[6] = cal->action_B;
+  byte_array[7] = cal->spare;
+  i = float_into_byte_array(byte_array, 8, cal->low_range);
+  i = float_into_byte_array(byte_array, i, cal->high_range);
+  i = float_into_byte_array(byte_array, i, cal->low_trim);
+  i = float_into_byte_array(byte_array, i, cal->high_trim);
+  i = float_into_byte_array(byte_array, i, cal->setpoint_A);
+  i = float_into_byte_array(byte_array, i, cal->hyst_A);
+  i = float_into_byte_array(byte_array, i, cal->setpoint_B);
+  i = float_into_byte_array(byte_array, i, cal->hyst_B);  
+
+  len = generate_message(SEM_COMMANDS_cSET_CONFIG, byte_array, i-1);
+  if (len <= 0) {
+    printf("Error generating message");
+    return -1;
+  }
+
+  printf("Message: [%u,", byte_array[0]);
+  for (i = 1; i < len - 1; i++) {
+    printf(" %u,", byte_array[i]);
+  }
+  printf(" %u]\n", byte_array[len - 1]);
+  
+  err = send_bytes(byte_array, len, ftHandle, output_array);
+  if (err || output_array[1] != 10) {
+    return -1;
+  }
+
+  printf("Config written successfully.\n");
+  return 0;
+}
+
+int SEM710_read_cal(FT_HANDLE *ftHandle, UNIVERSAL_CALIBRATION *cal)
+{
+  uint8_t byte_array[280];
+  uint8_t output_array[280];
+  byte_array[0] = 0;
+  int len = -1;
+  int err;
+  
+  len = generate_message(SEM_COMMANDS_cREAD_CAL, byte_array, 0);
+  if (len <= 0) {
+    printf("Error generating message.\n");
+    return -1;
+  }
+
+  err = send_bytes(byte_array, len, ftHandle, output_array);
+  if (err || output_array[1] != 32) {
+    printf("Error sending bytes to device\n");
+    return -1;
+  }
+
+  // decode reply
+  cal->lo_mv = float_from_byte_array(output_array, 5);
+  cal->hi_mv = float_from_byte_array(output_array, 9);
+  cal->lo_ma = float_from_byte_array(output_array, 13);
+  cal->hi_ma = float_from_byte_array(output_array, 17);
+  cal->lo_rtd = float_from_byte_array(output_array, 21);
+  cal->hi_rtd = float_from_byte_array(output_array, 25);
+  cal->lo_ma_in = float_from_byte_array(output_array, 29);
+  cal->hi_ma_in = float_from_byte_array(output_array, 33);
+
+  return 0;
+}
+
+int SEM710_set_cal(FT_HANDLE *ftHandle, UNIVERSAL_CALIBRATION *cal)
+{
+  uint8_t byte_array[280];
+  uint8_t output_array[280];
+  int err;
+  int len = -1;
+  int i = 0;
+  
+  byte_array[i] = 0;
+  byte_array[++i] = 0;
+  i = float_into_byte_array(byte_array, i, cal->lo_mv);
+  i = float_into_byte_array(byte_array, i, cal->hi_mv);
+  i = float_into_byte_array(byte_array, i, cal->lo_ma);
+  i = float_into_byte_array(byte_array, i, cal->hi_ma);
+  i = float_into_byte_array(byte_array, i, cal->lo_rtd);
+  i = float_into_byte_array(byte_array, i, cal->hi_rtd);
+  i = float_into_byte_array(byte_array, i, cal->lo_ma_in);
+  i = float_into_byte_array(byte_array, i, cal->hi_ma_in);
+
+  len = generate_message(SEM_COMMANDS_cSET_CAL, byte_array, i - 1);
+  if (len <= 0) {
+    printf("Error generating message\n");
+    return -1;
+  }
+
+  err = send_bytes(byte_array, len, ftHandle, output_array);
+  if (err || (output_array[1] != 10)) {
+    printf("Error sending bytes\n");
+    return -1;
+  }
+  
+  return 0;
+}
+
+int SEM710_enable_retran(FT_HANDLE *ftHandle)
+{
+  uint8_t byte_array[280];
+  uint8_t output_array[280];
+  int len = -1;
+  int err;
+
+  byte_array[0] = 0;
+  
+  len = generate_message(SEM_COMMANDS_cPRESET_ENABLE, byte_array, 0);
+  if (len <= 0) {
+    printf("Error generating message\n");
+    return -1;
+  }
+  
+  err = send_bytes(byte_array, len, ftHandle, output_array);
+  if (err) {
+    printf("Error sending bytes\n");
+    return -1;
+  }
+
+  return 0;
+}
+
+int SEM710_self_cal(FT_HANDLE *ftHandle, int command)
+{
+  /*
+    cal commands are:
+    SEM_COMMANDS_cSELF_CAL_100R
+    SEM_COMMANDS_cSELF_CAL_300R
+    SEM_COMMANDS_cSELF_CAL_0mV
+    SEM_COMMANDS_cSELF_CAL_50mv
+    SEM_COMMANDS_cSELF_CAL_0mA
+    SEM_COMMANDS_cSELF_CAL_20mA
+   */
+  uint8_t byte_array[280];
+  uint8_t output_array[280];
+  int len = -1;
+  int err;
+
+  byte_array[0] = 0;
+  
+  len = generate_message(command, byte_array, 0);
+  if (len <= 0) {
+    printf("Error generating message\n");
+    return -1;
+  }
+  
+  err = send_bytes(byte_array, len, ftHandle, output_array);
+  if (err) {
+    printf("Error sending bytes\n");
+    return -1;
+  }
 
   return 0;
 }

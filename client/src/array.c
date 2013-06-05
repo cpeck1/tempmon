@@ -78,4 +78,24 @@ int string_from_byte_array(uint8_t *byte_array, char *string,
   return j;
 }
 
+int float_into_byte_array(uint8_t *byte_array, int index, float flt)
+{
+  // insert flt into byte_array at index, returning the index of the next open
+  // space in the array
+  int retval = index + 4;
+  int i;
+
+  if (B_ENDIAN) {
+    for (i = 3; i >= 0; i--) {
+      byte_array[index + 3 - i] = *(((char *) &flt) + i);
+    }
+  }
+  else {
+    for (i = 0; i < 4; i++) {
+      byte_array[index + i] = *(((char *) &flt) + i);
+    }
+  }
+  return retval;
+}
+
 #endif
