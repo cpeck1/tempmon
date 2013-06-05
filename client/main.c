@@ -12,11 +12,33 @@
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
 
-
-int floats_close(float flt1, float flt2) 
+void show_user_options()
 {
-  float diff = flt2 - flt1;
-  return (fabs(diff) < 0.05);
+  printf("\nPlease enter number corresponding to selection.\n");
+  printf("0: Exit\n");
+  printf("1: Connect to host\n");
+  printf("2: Get temperature reading\n");
+  printf("3: edit calibration\n");
+  printf("4: read calibration\n");
+  printf("5: write calibration\n");
+  printf("6: edit config\n");
+  printf("7: read config\n");
+  printf("8: write config\n");
+}
+
+int get_user_selection()
+{
+  char text[20];
+  fputs("Enter selection: ", stdout);
+  fflush(stdout);
+  if ( fgets(text, sizeof text, stdin) )
+    {
+      int number;
+      if ( sscanf(text, "%d", &number) == 1 )
+	{
+	  return number;
+	}
+    }
 }
 
 int main()
@@ -68,50 +90,87 @@ int main()
   //////////////////////////////////////////
   // 3: await instructions (skip for now) //
   //////////////////////////////////////////
-  
-  //////////////////////////////
-  // 4: read data from SEM710 //
-  //////////////////////////////
+  int selection;
   int read_failed;
+  int write_failed;
   FT_STATUS ftStatus;
   SEM710_READINGS readings;
   CONFIG_BLOCK block;
   CONFIG_BLOCK_init(&block);
   CONFIG_DATA cal;
+  CONFIG_DATA_init(&cal);
+  UNIVERSAL_CALIBRATION unical;
 
-  /* read_failed = SEM710_read_config_block(&ftHandle, &block, 1); */
-  /* if (read_failed) { */
-  /*   printf("Read config block failure.\n"); */
-  /*   CONFIG_BLOCK_destroy(&block); */
-  /*   FT_Close(ftHandle); */
-  /*   return 1; */
-  /* } */
+  // prompt user for selection
+  int looping = 1;
+  while (looping) {
+    show_user_options();
+    selection = get_user_selection();
 
-  read_failed = SEM710_read_config(&ftHandle, &cal);
-  if (read_failed) {
-    printf("Read config failure.\n");
-    CONFIG_BLOCK_destroy(&block);
-    FT_Close(ftHandle);
-    return 1;
+    switch(selection) {
+    case 0:
+      looping = 0;
+      break;
+    case 1:
+      printf("Unimplemented\n");
+      break;
+    case 2:
+      read_failed = SEM710_read_process(&ftHandle, &readings);
+      if (read_failed) {
+	printf("Read process failure.\n");
+	looping = 0;
+      }
+      break;
+    case 3:
+      printf("Unimplemented\n");
+      break;
+    case 4:
+      read_failed = SEM710_read_cal(&ftHandle, &unical);
+      if (read_failed) {
+	printf("Read calibration failure.\n");
+	looping = 0;
+      }
+      break;
+    case 5:
+      write_failed = SEM710_set_cal(&ftHandle, &unical);
+      if (write_failed) {
+	printf("Write calibration failure.\n");
+	looping = 0;
+      }
+      break;
+    case 6:
+      printf("Unimplemented\n");
+      break;
+    case 7:
+      read_failed = SEM710_read_config(&ftHandle, &cal);
+      if (read_failed) {
+	printf("Read config failure.\n");
+	looping = 0;
+      }
+      break;
+    case 8:
+      write_failed = SEM710_write_config(&ftHandle, &cal);
+      if (write_failed) {
+	printf("Write config failure.\n");
+	looping = 0;
+      }
+      break;
+    default:
+      printf("Selection invalid.\n");
+      break;
+    }
+    usleep(500000);
   }
+  //////////////////////////////
+  // 4: read data from SEM710 //
+  //////////////////////////////
 
-  read_failed = SEM710_read_process(&ftHandle, &readings);
-  if (read_failed) {
-    printf("Read process failure.\n");
-    FT_Close(ftHandle);
-    return 1;
-  }
 
   // 4.5: transmit data from SEM710
 
   //////////////////////////////////////////
   // Communication to server unimplemented//
   //////////////////////////////////////////
-  printf("Device ADC reading: %f\n", readings.ADC_VALUE);
-  printf("Device ELEC reading: %f\n", readings.ELEC_VALUE);
-  printf("Device PROCESS reading: %f\n", readings.PROCESS_VARIABLE);
-  printf("Device MA reading: %f\n", readings.MA_OUT);
-  printf("Device TEMP reading: %f\n", readings.CJ_TEMP);
 
   // 5: purge buffer; await further instructions
 

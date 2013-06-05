@@ -149,6 +149,29 @@ typedef struct {
   char comment[256];
 } CONFIG_DATA;
 
+void CONFIG_DATA_init(CONFIG_DATA *block)
+{
+  block->tc_code = 8;
+  block->up_scale = 1;
+  block->units = 0;
+  block->model_type = 0;
+  block->vout_range = 0;
+ 
+  block->action_A = 1;
+  block->action_B = 1;
+  block->spare = 0;
+  block->low_range = 0.0;
+  block->high_range = 100.0;
+  block->low_trim = 0.0;
+  block->high_trim = 0.0;
+
+  block->setpoint_A = 100.0;
+  block->hyst_A = 0.1;
+
+  block->setpoint_B = 100.0;
+  block->hyst_B = 0.1;
+}
+
 typedef struct {
   uint8_t straight_from_programming; // will always be 0, used on first power up
   uint8_t dummy;
@@ -166,6 +189,13 @@ typedef struct {
   float hi_cal_slide_wire;
   float hi_voltage_output;
 } UNIVERSAL_CALIBRATION;
+
+void UNIVERSAL_CALIBRATION_init(UNIVERSAL_CALIBRATION *cal)
+{
+  // set the unical's vars to their default value
+  
+}
+
 
 typedef struct {
   float *fp;
