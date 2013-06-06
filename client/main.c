@@ -41,6 +41,7 @@ int get_user_selection()
     }
 }
 
+
 int main()
 {
   // Get device ids from file:
@@ -106,49 +107,53 @@ int main()
   while (looping) {
     show_user_options();
     selection = get_user_selection();
+    printf("\n");
 
     switch(selection) {
     case 0:
       looping = 0;
       break;
-    case 1:
+    case 1: // connect to server
       printf("Unimplemented\n");
       break;
-    case 2:
+    case 2: // read process
       read_failed = SEM710_read_process(&ftHandle, &readings);
       if (read_failed) {
 	printf("Read process failure.\n");
 	looping = 0;
       }
+      else {
+	SEM710_display_readings(&readings);
+      }
       break;
-    case 3:
+    case 3: // edit calibration
       printf("Unimplemented\n");
       break;
-    case 4:
+    case 4: // read calibration
       read_failed = SEM710_read_cal(&ftHandle, &unical);
       if (read_failed) {
 	printf("Read calibration failure.\n");
 	looping = 0;
       }
       break;
-    case 5:
+    case 5: // write calibration
       write_failed = SEM710_set_cal(&ftHandle, &unical);
       if (write_failed) {
 	printf("Write calibration failure.\n");
 	looping = 0;
       }
       break;
-    case 6:
+    case 6: // edit configuration
       printf("Unimplemented\n");
       break;
-    case 7:
+    case 7: // read configuration
       read_failed = SEM710_read_config(&ftHandle, &cal);
       if (read_failed) {
 	printf("Read config failure.\n");
 	looping = 0;
       }
       break;
-    case 8:
+    case 8: // write configuration
       write_failed = SEM710_write_config(&ftHandle, &cal);
       if (write_failed) {
 	printf("Write config failure.\n");

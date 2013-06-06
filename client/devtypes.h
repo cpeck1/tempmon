@@ -123,6 +123,15 @@ typedef struct {
   float CJ_TEMP;
 } SEM710_READINGS;
 
+void SEM710_display_readings(SEM710_READINGS *readings)
+{
+  printf("%f", readings->ADC_VALUE);
+  printf("%f", readings->ELEC_VALUE);
+  printf("%f", readings->PROCESS_VARIABLE);
+  printf("%f", readings->MA_OUT);
+  printf("%f", readings->CJ_TEMP);
+}
+
 typedef struct {
   uint8_t tc_code;
   uint8_t up_scale;
@@ -190,11 +199,11 @@ typedef struct {
   float hi_voltage_output;
 } UNIVERSAL_CALIBRATION;
 
-void UNIVERSAL_CALIBRATION_init(UNIVERSAL_CALIBRATION *cal)
-{
-  // set the unical's vars to their default value
+/* void UNIVERSAL_CALIBRATION_init(UNIVERSAL_CALIBRATION *cal) */
+/* { */
+/*   // set the unical's vars to their default value */
   
-}
+/* } */
 
 
 typedef struct {

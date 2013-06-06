@@ -288,7 +288,7 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
       printf("Error FT_Write(%d)\n.", ftStatus);
       return 1;
     }
-    printf("Bytes written: %d\n", bytes_written);
+    printf("Writing %d bytes... ", bytes_written);
     usleep(200000); // 200 ms
     while ((difftime(expire, start) < 2.5) && (!message_received)) {
       ftStatus = FT_GetQueueStatus(*ftHandle, &q_status);
@@ -378,6 +378,7 @@ int send_bytes(uint8_t* byte_array, int byte_array_size,
       time(&expire);
     } // end while (time expire condition)
     if (!message_received) {
+      printf("no reply. Retrying.\n");
       retry_counter = retry_counter - 1;
       ftStatus = FT_Purge(*ftHandle, FT_PURGE_TX & FT_PURGE_RX);
     }
@@ -425,6 +426,7 @@ int send_block_message(uint8_t *byte_array, int byte_array_size,
     usleep(200000); // 200 ms
     while ((difftime(expire, start) < 2.5) && (!message_received)) {
       ftStatus = FT_GetQueueStatus(*ftHandle, &q_status);
+      //      printf(
       if (ftStatus != FT_OK) {
 	printf("Error FT_GetQueueStatus(%d)\n", ftStatus);
 	return -1;
