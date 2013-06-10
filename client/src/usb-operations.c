@@ -279,7 +279,6 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
   uint8_t byte_array[280];
   int len = -1;
   int i;
-  int err;
   byte_array[0] = 0;
   uint8_t response_array[280];
   
@@ -288,8 +287,6 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
 
   for (i = 0; i < 280; i++) {
     byte_array[i] = 0;
-  }
-  for (i = 0; i < 28; i++) {
     response_array[i] = 0;
   }
 
@@ -335,6 +332,55 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
   readings->MA_OUT = float_from_byte_array(response_array, 15);
   readings->CJ_TEMP = float_from_byte_array(response_array, 19);
 
+  return 0;
+}
+
+
+int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
+{
+  uint8_t output_array[280];
+  uint8_t input_array[280];
+
+  int i;
+  int len = -1;
+  int written;
+  int received;
+
+  for (i = 0; i < 280; i++) {
+    output_array[i] = 0;
+    input_array[i] = 0;
+  }
+  
+  len = generate_message(SEM_COMMANDS_cREAD_CONFIG, output_array, 0);
+  if (len == -1) {
+    printf("Failed to generate message.\n");
+    return -1;
+  }
+
+  for (i = 0; (i < 40 && (input_array[1] != 33)); i++) { 
+    // run until positive response received, or 40 negative replies (10 seconds)
+    written = ftdi_write_data(ctx, output_array, len);
+    if (written < 0) {
+      printf("Error: ftdi_write_data %d (%s)\n", written,
+    	     ftdi_get_error_string(ctx));
+      return written;
+    }
+   
+    printf("Bytes written: %d\n", written);
+
+    usleep(250000); // give the device some time to transmit process readings
+
+    received = ftdi_read_data(ctx, input_array, 280);
+    if (received < 0) {
+      printf("Error: ftdi_read_data %d (%s)\n", 
+	     received, ftdi_get_error_string(ctx));
+      return received;
+    }
+    printf("Bytes received: %d\n", received);
+  }
+
+  array_to_CONFIG_DATA(cal, input_array);
+  
   return 0;
 }
 

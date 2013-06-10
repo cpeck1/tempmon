@@ -2,6 +2,7 @@
 #define _DEVTYPES
 #include <stdlib.h>
 #include <stdint.h>
+#include "src/array.c"
 
 #define SEM710_BAUDRATE 19200
 
@@ -179,6 +180,48 @@ void CONFIG_DATA_init(CONFIG_DATA *block)
 
   block->setpoint_B = 100.0;
   block->hyst_B = 0.1;
+}
+
+void array_to_CONFIG_DATA(CONFIG_DATA *cal, uint8_t *input_array)
+{
+  // transfers the contents of the given byte array into the CONFIG_DATA
+  
+  cal->tc_code = input_array[3];
+  cal->up_scale = input_array[4];
+  cal->units = input_array[5];
+  cal->model_type = input_array[6];
+  cal->vout_range = input_array[7];
+  cal->action_A = input_array[8];
+  cal->action_B = input_array[9];
+  cal->spare = input_array[10];
+  cal->low_range = float_from_byte_array(input_array, 11);
+  cal->high_range = float_from_byte_array(input_array, 15);
+  cal->low_trim = float_from_byte_array(input_array, 19);
+  cal->high_trim = float_from_byte_array(input_array, 23);
+  cal->setpoint_A = float_from_byte_array(input_array, 27);
+  cal->hyst_A = float_from_byte_array(input_array, 31);
+  cal->setpoint_B = float_from_byte_array(input_array, 35);
+  cal->hyst_B = float_from_byte_array(input_array, 39);
+}
+
+void display_CONFIG_DATA(CONFIG_DATA *cal)
+{
+  printf("tc_code = %d\n", cal->tc_code);
+  printf("up_scale = %d\n", cal->up_scale);
+  printf("units = %d\n", cal->units);
+  printf("model_type = %d\n", cal->model_type);
+  printf("vout_range = %d\n", cal->vout_range);
+  printf("action_A = %d\n", cal->action_A);
+  printf("action_B = %d\n", cal->action_B);
+  printf("spare = %d\n", cal->spare);
+  printf("low_range = %f\n", cal->low_range);
+  printf("high_range = %f\n", cal->high_range);
+  printf("low_trim = %f\n", cal->low_trim);
+  printf("high_trim = %f\n", cal->high_trim);
+  printf("setpoint_A = %f\n", cal->setpoint_A);
+  printf("hyst_A = %f\n", cal->hyst_A);
+  printf("setpoint_B = %f\n", cal->setpoint_B);
+  printf("hyst_b = %f\n", cal->hyst_B);
 }
 
 typedef struct {

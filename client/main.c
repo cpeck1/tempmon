@@ -19,6 +19,7 @@ void show_user_options()
   printf("0: Exit\n");
   printf("1: Connect to host\n");
   printf("2: Get temperature reading\n");
+  printf("3: Read device config\n");
 }
 
 int get_user_selection()
@@ -124,13 +125,16 @@ int main()
     /* case 3: // edit calibration */
     /*   printf("Unimplemented\n"); */
     /*   break; */
-    /* case 4: // read calibration */
-    /*   read_failed = SEM710_read_cal(&ftHandle, &unical); */
-    /*   if (read_failed) { */
-    /* 	printf("Read calibration failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
+    case 3: // read config
+      read_failed = SEM710_read_config(ftHandle, &cal);
+      if (read_failed) {
+    	printf("Read calibration failure.\n");
+    	looping = 0;
+      }
+      else {
+        display_CONFIG_DATA(&cal);
+      }
+      break;
     /* case 5: // write calibration */
     /*   write_failed = SEM710_set_cal(&ftHandle, &unical); */
     /*   if (write_failed) { */
