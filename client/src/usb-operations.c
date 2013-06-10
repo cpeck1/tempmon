@@ -281,7 +281,10 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
   int i;
   int err;
   byte_array[0] = 0;
-  uint8_t response_array[28];
+  uint8_t response_array[280];
+  
+  int written;
+  int received;
 
   for (i = 0; i < 280; i++) {
     byte_array[i] = 0;
@@ -297,23 +300,23 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
   }
   for (i = 0; (i < 40 && (response_array[1] != 34)); i++) { 
     // run until positive response received, or 40 negative replies (10 seconds)
-    err = ftdi_write_data(ctx, byte_array, len);
-    if (err < 0) {
-      printf("Error: ftdi_write_data(%d)\n", err);
-      return err;
+    written = ftdi_write_data(ctx, byte_array, len);
+    if (written < 0) {
+      printf("Error: ftdi_write_data(%d)\n", written);
+      return written;
     }
    
     usleep(250000); // give the device some time to transmit process readings
 
-    err = ftdi_read_data(ctx, response_array, 28);
-    if (err < 0) {
-      printf("Error: ftdi_read_data(%d)\n", err);
-      return err;
+    received = ftdi_read_data(ctx, response_array, 280);
+    if (received < 0) {
+      printf("Error: ftdi_read_data(%d)\n", received);
+      return received;
     }
   }
 
   printf("Rec:");
-  for (i = 0; i < 28; i++) {
+  for (i = 0; i < received; i++) {
     printf("%u, ", response_array[i]);
   }
   printf("\n");
