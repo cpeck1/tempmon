@@ -125,11 +125,11 @@ typedef struct {
 
 void SEM710_display_readings(SEM710_READINGS *readings)
 {
-  printf("%f", readings->ADC_VALUE);
-  printf("%f", readings->ELEC_VALUE);
-  printf("%f", readings->PROCESS_VARIABLE);
-  printf("%f", readings->MA_OUT);
-  printf("%f", readings->CJ_TEMP);
+  printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
+  printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE);
+  printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE);
+  printf("MA_OUT=%f\n", readings->MA_OUT);
+  printf("CJ_TEMP=%f\n", readings->CJ_TEMP);
 }
 
 typedef struct {
