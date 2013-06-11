@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <string.h>
 #include <unistd.h>
 
@@ -8,50 +7,60 @@
 #define ID2 "DEVICE_ID_PRODUCT"
 #define ID3 "DEVICE_ID_SERIAL"
 
-// get index of first occurrence of chr in string; not present returns -1 
+/* get index of first occurrence of chr in string; not present returns -1 */
 int get_char_index(char *string, char chr)
 {
-  int index = 0;
+  int index;
 
-  while (string[index] != '\0') {
+  index = 0;
+  while ((string[index] != '\0') && (index < 256)) {
     if (string[index] == chr) {
       return index;
     }
     index++;
   }
-  return -1; // not found
+  return -1; /* not found */
 }
 
-// get the ID equal to the string phrase in the given line
-// returns 1 if id found, and 0 if file is malformed
+/* 
+   get the ID equal to the string phrase in the given line
+   returns 1 if id found, and 0 if file is malformed 
+*/
 int get_id_value(char *line, int *id_val) 
 {
-  int eq_index = get_char_index(line, '=');
-  int eol_index = get_char_index(line, '\n');
+  int eq_index;
+  int eol_index;
+  int diff;
+  char *val_str;
+  int i;
+
+  eq_index = get_char_index(line, '=');
+  eol_index = get_char_index(line, '\n');
 
   if (eq_index == -1 || eol_index == -1) {
     return 0;
   }
 
-  int diff = eol_index - eq_index;
-  char val_str[diff];
+  diff = eol_index - eq_index;
+  val_str = (char *) malloc(diff);
   
-  int i;
   for (i = 0; i < diff - 1; i++) {
     val_str[i] = line[eq_index+1 + i];
   }
   val_str[diff - 1] = '\0';
   *id_val = atoi(val_str);
 
+  free(val_str);
   return 1;
 }
 
 int get_specified_id (FILE *f, char *id_phrase, int *id_val)
 {
-  int found = 0;
+  int found;
+  char line[256];
   
   rewind(f);
-  char line[256];
+  found = 0;
   while (!feof(f)) {
     if (fgets(line, 256, f) != NULL) {
       if (strstr(line, id_phrase)) {
@@ -65,18 +74,24 @@ int get_specified_id (FILE *f, char *id_phrase, int *id_val)
 
 int get_device_ids(int *device_id, int *vendor_id)
 {
-  FILE *dfile = fopen(DEVICE_FILE, "r");
+  FILE *dfile;
+  int found_dev_id;
+  int found_vend_id;
+
+  dfile = fopen(DEVICE_FILE, "r");
   if (!dfile) {
-    return 0xE01;
+    printf("Error: missing device file\n");
+    return -1;
   }
 
-  int found_dev_id = get_specified_id(dfile, ID1, vendor_id);
-  int found_vend_id = get_specified_id(dfile, ID2, device_id);
+  found_dev_id = get_specified_id(dfile, ID1, vendor_id);
+  found_vend_id = get_specified_id(dfile, ID2, device_id);
 
   if (found_dev_id && found_vend_id) {
     return 0;
   }
   else {
-    return 0xE02;
+    printf("Error: bad device file\n");
+    return -1;
   }
 }

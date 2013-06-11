@@ -1,15 +1,9 @@
 #define _GNU2_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <math.h>
-#include <time.h>
-#include <ftdi.h>
 
+#include <stdio.h>
 #include "./src/devstats.c"
-#include "devtypes.h"
 #include "./src/usb-operations.c"
+
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
 
@@ -35,160 +29,135 @@ int get_user_selection()
 	  return number;
 	}
     }
+  return 0;
 }
 
 
-int main()
+int main(void)
 {
-  // Get device ids from file:
+  /* 
+     gimmicky, but validity of proceed checked at every step at which errors 
+     might occur, where errors result in nullifying proceed; this way, on error
+     the procedure skips the remaining procedures and hits the close and free
+     statements at the end of main
+  */
+  int proceed;
+
   int product_id;
   int vendor_id;
+  int err;
 
-  int err = 0;
-  err = get_device_ids(&product_id, &vendor_id);
-  if (err) {
-    printf("Error: bad or missing device file\n");
-    return 1;
-  }
+  struct ftdi_context *handle;
 
-  //////////////////////////
-  // 1: Connect to server //
-  //////////////////////////
-
-  // unimplemented stub //
- 
-  ///////////////////////////
-  // 2: Open SEM710 device //
-  ///////////////////////////
-  int detach_failed;
-  int open_attempt;
-  int prep_attempt;
-  struct ftdi_context *ftHandle;
-  ftHandle = ftdi_new();
-  
-  detach_failed = detach_device_kernel(vendor_id, product_id);
-  if (detach_failed) { return 1; }
-  
-  open_attempt = open_device(ftHandle, vendor_id, product_id);
-  if (open_attempt) { return 1; }
-
-  prep_attempt = prepare_device(ftHandle);
-  if (prep_attempt) { ;
-    return 1; 
-  }
-
-  // 2.5: report open status
-  
-  //////////////////////////////////////////
-  // Communication to server unimplemented//
-  //////////////////////////////////////////
-  printf("Device prepared.\n");
-
-  //////////////////////////////////////////
-  // 3: await instructions (skip for now) //
-  //////////////////////////////////////////
   int selection;
-  int read_failed;
-  int write_failed;
-  // FT_STATUS ftStatus;
   SEM710_READINGS readings;
-  CONFIG_BLOCK block;
-  CONFIG_BLOCK_init(&block);
   CONFIG_DATA cal;
-  CONFIG_DATA_init(&cal);
-  UNIVERSAL_CALIBRATION unical;
+  uint8_t inc_buff[280];
+  int inc_len;
 
-  // prompt user for selection
-  int looping = 1;
-  while (looping) {
+  proceed = 1;
+  err = 0;
+
+  /* Get device stats from file: */
+  err = get_device_ids(&product_id, &vendor_id);
+  if (err) { proceed = 0; }
+
+  /************************/
+  /* 1: Connect to server */
+  /************************/
+
+  /* unimplemented stub */
+ 
+  /*************************/
+  /* 2: Open SEM710 device */
+  /*************************/
+  handle = ftdi_new();
+  
+  if (proceed) {
+   err = detach_device_kernel(vendor_id, product_id);
+    if (err) { proceed = 0; }
+  }
+  
+  if (proceed) {
+    err = open_device(handle, vendor_id, product_id);
+    if (err) { proceed = 0; }
+  }
+
+  if (proceed) {
+    err = prepare_device(handle);
+    if (err) { proceed = 0; }
+  }
+
+  /***************************/
+  /* 2.5: report open status */
+  /***************************/
+  
+  /* Communication to server unimplemented */
+ 
+
+  /****************************************/
+  /* 3: await instructions (skip for now) */
+  /****************************************/
+
+
+  /* prompt user for selection */
+  while (proceed) {
+    printf("Device ready.\n");
+    inc_len = -1;
+
     show_user_options();
     selection = get_user_selection();
     printf("\n");
 
     switch(selection) {
     case 0:
-      looping = 0;
+      proceed = 0;
       break;
-    case 1: // connect to server
-      printf("Unimplemented\n");
-      break;
-    case 2: // read process
-      read_failed = SEM710_read_process(ftHandle, &readings);
-      if (read_failed) {
+    case 1: /* read process */
+      inc_len = read_device(handle, SEM_COMMANDS_cREAD_PROCESS, inc_buff);
+      if (inc_len < 0) {
 	printf("Read process failure.\n");
-	looping = 0;
+	proceed = 0;
       }
       else {
-	SEM710_display_readings(&readings);
+	get_readings(&readings, inc_buff, inc_len);
+	display_readings(&readings);
       }
       break;
-    /* case 3: // edit calibration */
-    /*   printf("Unimplemented\n"); */
-    /*   break; */
-    case 3: // read config
-      read_failed = SEM710_read_config(ftHandle, &cal);
-      if (read_failed) {
+    case 2: /* read config */
+      inc_len = read_device(handle, SEM_COMMANDS_cREAD_CONFIG, inc_buff);
+      if (inc_len < 0) {
     	printf("Read calibration failure.\n");
-    	looping = 0;
+    	proceed = 0;
       }
       else {
-        display_CONFIG_DATA(&cal);
+	get_config_data(&cal, inc_buff, inc_len);
+        display_config_data(&cal);
       }
       break;
-    /* case 5: // write calibration */
-    /*   write_failed = SEM710_set_cal(&ftHandle, &unical); */
-    /*   if (write_failed) { */
-    /* 	printf("Write calibration failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
-    /* case 6: // edit configuration */
-    /*   printf("Unimplemented\n"); */
-    /*   break; */
-    /* case 7: // read configuration */
-    /*   read_failed = SEM710_read_config(&ftHandle, &cal); */
-    /*   if (read_failed) { */
-    /* 	printf("Read config failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
-    /* case 8: // write configuration */
-    /*   write_failed = SEM710_write_config(&ftHandle, &cal); */
-    /*   if (write_failed) { */
-    /* 	printf("Write config failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
     default:
       printf("Selection invalid.\n");
       break;
     }
     usleep(500000);
   }
-  //////////////////////////////
-  // 4: read data from SEM710 //
-  //////////////////////////////
 
+  /**********************************/
+  /* 4.5: transmit data from SEM710 */
+  /**********************************/
 
-  // 4.5: transmit data from SEM710
+  /* Communication to server unimplemented */
 
-  //////////////////////////////////////////
-  // Communication to server unimplemented//
-  //////////////////////////////////////////
+  /***********************************************/
+  /* 5: purge buffer; await further instructions */
+  /***********************************************/
 
-  // 5: purge buffer; await further instructions
+  /*******************/
+  /* 6: close device */
+  /*******************/
 
-  // 6: close device
-  ftdi_usb_close(ftHandle);
-  ftdi_free(ftHandle);
-  /* if (ftStatus != FT_OK) { */
-  /*   printf("Error FT_Close(%d).\n", ftStatus); */
-  /*   return 1; */
-  /* } */
-  /* else { */
-  /*   printf("Device closed. Exiting...\n"); */
-  /* } */
-  CONFIG_BLOCK_destroy(&block);
+  ftdi_usb_close(handle);
+  ftdi_free(handle);
   
   return 0;
 }
