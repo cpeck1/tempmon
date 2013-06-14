@@ -3,14 +3,7 @@
 
 #define TEST_FILE "/home/cpeck1/workspace/tempmon/tempmon/client/tests/testfile.ini"
 #include <stdio.h>
-
-void report_error(int testnum, char *test_desc, char *expected, char *got)
-{
-  printf("Test failed: test %d\n", testnum);
-  printf("\t%s\n", test_desc);
-  printf("\tExpected: %s\n", expected);
-  printf("\tGot: %s\n", got);
-}
+#include "test_funcs.c"
 
 int file_parse_test(void)
 {
@@ -24,6 +17,7 @@ int file_parse_test(void)
 
   char *test;
   int index;
+  int found;
   int val;
   FILE *f;
 
@@ -101,8 +95,8 @@ int file_parse_test(void)
   test_number++;
 
   test = "This_val=booga";
-  index = get_id_value(test, &val);
-  if (index == 0) {
+  found = get_id_value(test, &val);
+  if (found == 0) {
     tests_passed++;
   }
   else {
@@ -112,8 +106,8 @@ int file_parse_test(void)
 
   test_number++;
   test = "";
-  index = get_id_value(test, &val);
-  if (index == 0) {
+  found = get_id_value(test, &val);
+  if (found == 0) {
     tests_passed++;
   }
   else {
@@ -127,8 +121,8 @@ int file_parse_test(void)
   test_number++;
 
   test = "This_val=1\n";
-  index = get_id_value(test, &val);
-  if ((index != 0) && (val == 1)) {
+  found = get_id_value(test, &val);
+  if ((found != 0) && (val == 1)) {
     tests_passed++;
   }
   else {
@@ -139,8 +133,8 @@ int file_parse_test(void)
   test_number++;
   
   test = "This_val=35623\n";
-  index = get_id_value(test, &val);
-  if ((index != 0) && (val == 35623)) {
+  found = get_id_value(test, &val);
+  if ((found != 0) && (val == 35623)) {
     tests_passed++;
   }
   else {
@@ -156,23 +150,23 @@ int file_parse_test(void)
 
   test_number++;
 
-  index = get_specified_id(f, "fake_id", &val);
-  if (index == 0) {
+  found = get_specified_id(f, "fake_id", &val);
+  if (found == 0) {
     tests_passed++;
   }
   else {
-    sprintf(got, "%d", index);
+    sprintf(got, "%d", found);
     report_error(test_number, test_desc, "0", got);
   }
   test_number++;
 
 
-  index = get_specified_id(f, "faker_id", &val);
-  if (index == 0) {
+  found = get_specified_id(f, "faker_id", &val);
+  if (found == 0) {
     tests_passed++;
   }
   else {
-    sprintf(got, "%d", index);
+    sprintf(got, "%d", found);
     report_error(test_number, test_desc, "0", got);
   }
 
@@ -182,7 +176,7 @@ int file_parse_test(void)
 
   test_number++;
   
-  index = get_specified_id(f, "real_id", &val);
+  found = get_specified_id(f, "real_id", &val);
   if (val == 3) {
     tests_passed++;
   }
@@ -193,7 +187,7 @@ int file_parse_test(void)
 
   test_number++;
   
-  index = get_specified_id(f, "realer_id", &val);
+  found = get_specified_id(f, "realer_id", &val);
   if (val == 12345) {
     tests_passed++;
   }

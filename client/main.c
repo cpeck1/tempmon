@@ -7,9 +7,13 @@
 #include <time.h>
 #include <ftdi.h>
 
-#include "./src/devstats.c"
-#include "devtypes.h"
-#include "./src/usb-operations.c"
+#include "src/fparse.c"
+#include "src/devtypes.h"
+#include "src/usb-operations.c"
+
+#include "tests/array_t.c"
+#include "tests/fparse_t.c"
+
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
 
@@ -40,6 +44,9 @@ int get_user_selection()
 
 int main()
 {
+  file_parse_test();
+  array_test();
+
   // Get device ids from file:
   int product_id;
   int vendor_id;
@@ -61,27 +68,25 @@ int main()
   // 2: Open SEM710 device //
   ///////////////////////////
   int detach_failed;
-  int open_attempt;
-  int prep_attempt;
+  int open_failed;
+  int prep_failed;
   struct ftdi_context *ftHandle;
   ftHandle = ftdi_new();
   
   detach_failed = detach_device_kernel(vendor_id, product_id);
   if (detach_failed) { return 1; }
   
-  open_attempt = open_device(ftHandle, vendor_id, product_id);
-  if (open_attempt) { return 1; }
+  open_failed = open_device(ftHandle, vendor_id, product_id);
+  if (open_failed) { return 1; }
 
-  prep_attempt = prepare_device(ftHandle);
-  if (prep_attempt) { ;
-    return 1; 
-  }
+  prep_failed = prepare_device(ftHandle);
+  if (prep_failed) { return 1; }
 
   // 2.5: report open status
   
-  //////////////////////////////////////////
-  // Communication to server unimplemented//
-  //////////////////////////////////////////
+  ///////////////////////////////////////////
+  // Communication to server unimplemented //
+  ///////////////////////////////////////////
   printf("Device prepared.\n");
 
   //////////////////////////////////////////
@@ -89,14 +94,14 @@ int main()
   //////////////////////////////////////////
   int selection;
   int read_failed;
-  int write_failed;
+  /* int write_failed; */
   // FT_STATUS ftStatus;
   SEM710_READINGS readings;
-  CONFIG_BLOCK block;
-  CONFIG_BLOCK_init(&block);
+  /* CONFIG_BLOCK block; */
+  /* CONFIG_BLOCK_init(&block); */
   CONFIG_DATA cal;
   CONFIG_DATA_init(&cal);
-  UNIVERSAL_CALIBRATION unical;
+  /* UNIVERSAL_CALIBRATION unical; */
 
   // prompt user for selection
   int looping = 1;
@@ -122,9 +127,6 @@ int main()
 	SEM710_display_readings(&readings);
       }
       break;
-    /* case 3: // edit calibration */
-    /*   printf("Unimplemented\n"); */
-    /*   break; */
     case 3: // read config
       read_failed = SEM710_read_config(ftHandle, &cal);
       if (read_failed) {
@@ -135,30 +137,6 @@ int main()
         display_CONFIG_DATA(&cal);
       }
       break;
-    /* case 5: // write calibration */
-    /*   write_failed = SEM710_set_cal(&ftHandle, &unical); */
-    /*   if (write_failed) { */
-    /* 	printf("Write calibration failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
-    /* case 6: // edit configuration */
-    /*   printf("Unimplemented\n"); */
-    /*   break; */
-    /* case 7: // read configuration */
-    /*   read_failed = SEM710_read_config(&ftHandle, &cal); */
-    /*   if (read_failed) { */
-    /* 	printf("Read config failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
-    /* case 8: // write configuration */
-    /*   write_failed = SEM710_write_config(&ftHandle, &cal); */
-    /*   if (write_failed) { */
-    /* 	printf("Write config failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   break; */
     default:
       printf("Selection invalid.\n");
       break;
@@ -181,14 +159,6 @@ int main()
   // 6: close device
   ftdi_usb_close(ftHandle);
   ftdi_free(ftHandle);
-  /* if (ftStatus != FT_OK) { */
-  /*   printf("Error FT_Close(%d).\n", ftStatus); */
-  /*   return 1; */
-  /* } */
-  /* else { */
-  /*   printf("Device closed. Exiting...\n"); */
-  /* } */
-  CONFIG_BLOCK_destroy(&block);
   
   return 0;
 }

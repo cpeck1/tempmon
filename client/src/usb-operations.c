@@ -3,7 +3,7 @@
 
 #include <ftdi.h>
 #include <libusb-1.0/libusb.h>
-#include "../devtypes.h"
+#include "devtypes.h"
 #include "array.c"
 
 uint16_t make_crc(uint8_t *byte_array, int end_position)
@@ -31,7 +31,7 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
   for (i = 1; i <= end_position; i++) {
     char_in = byte_array[i];
     crc = crc ^ char_in;
-    for (j = 0; j < 8; j++) {
+    for (j = 1; j <= 8; j++) {
       lsBit = crc & 1;
       crc = crc >> 1;
       if (lsBit == 1) {
@@ -150,6 +150,8 @@ int prepare_device(struct ftdi_context *ctx)
     printf("Error: ftdi_set_latency_timer(%d)\n", err);
     return err;
   }
+
+  return 0;
 }
 
 int generate_message(uint8_t COMMAND, uint8_t* byte_array,
@@ -168,25 +170,32 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
   output[i] = 0x55;
 
   // command
-  output[++i] = COMMAND;
+  i++;
+  output[i] = COMMAND;
 
   // length
-  output[++i] = byte_array_upper_index;
+  i++;
+  output[i] = byte_array_upper_index;
   for (x = 0; x <= byte_array_upper_index; x++) {
-    output[++i] = byte_array[x];
+    i++;
+    output[i] = byte_array[x];
   }
 
   // crc
   crc = make_crc(output, i);
-  lbyte = (crc >> 8);
+  printf("Sent crc: %d\n", crc);
+  lbyte = (crc >> 8) & 0xFF;
   rbyte = (crc) & 0xFF;
 
   // put CRC on byte_array, little Endian
-  output[++i] = rbyte;
-  output[++i] = lbyte;
+  i++;
+  output[i] = rbyte;
+  i++;
+  output[i] = lbyte;
 
   // add end byte;
-  output[++i] = 0xAA;
+  i++;
+  output[i] = 0xAA;
   for (x = 0; x <= i; x++) {
     byte_array[x] = output[x];
   }
@@ -244,27 +253,6 @@ int generate_block_message(uint8_t device_address, int command,
 }
 
 
-
-/* int SEM710_read_config_block(ftdi_context *ctx, CONFIG_BLOCK *cal,  */
-/* 			     uint8_t device_address) */
-/* { */
-/*   uint8_t byte_array[280]; */
-/*   uint8_t output_array[280]; */
-/*   byte_array[0] = 0; */
-/*   int i; */
-/*   int len; */
-/*   int err; */
-  
-/*   len = generate_block_message(device_address, COMMAND_FUNCTION_READ_DATA, */
-/* 			       0xEC, 0xE000, byte_array, 1); */
-/*   printf("Message: [%u,", byte_array[0]); */
-/*   for (i = 1; i < len - 1; i++) { */
-/*     printf(" %u,", byte_array[i]); */
-/*   } */
-/*   printf(" %u]\n", byte_array[len - 1]); */
-
-/* } */
-
 int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
 {
   /* 
@@ -272,32 +260,32 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
        -ADC value: analog-to-digital converter value
        -ELEC value: ?
        -PROCESS variable: ?
-       -MA_OUT: Amperature reading of the device
+       -MA_OUT: Amperage of the device
        -CJ_TEMP: Adjusted temperature of the device.
 
   */
-  uint8_t byte_array[280];
+  uint8_t write_array[280];
   int len = -1;
   int i;
-  byte_array[0] = 0;
-  uint8_t response_array[280];
+  write_array[0] = 0;
+  uint8_t read_array[280];
   
   int written;
   int received;
 
   for (i = 0; i < 280; i++) {
-    byte_array[i] = 0;
-    response_array[i] = 0;
+    write_array[i] = 0;
+    read_array[i] = 0;
   }
 
-  len = generate_message(SEM_COMMANDS_cREAD_PROCESS, byte_array, 0);
+  len = generate_message(SEM_COMMANDS_cREAD_PROCESS, write_array, 0);
   if (len == -1) {
     printf("Failed to generate message.\n");
     return -1;
   }
-  for (i = 0; (i < 40 && (response_array[1] != 34)); i++) { 
+  for (i = 0; (i < 40 && (read_array[1] != 34)); i++) { 
     // run until positive response received, or 40 negative replies (10 seconds)
-    written = ftdi_write_data(ctx, byte_array, len);
+    written = ftdi_write_data(ctx, write_array, len);
     if (written < 0) {
       printf("Error: ftdi_write_data(%d)\n", written);
       return written;
@@ -305,7 +293,7 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
    
     usleep(250000); // give the device some time to transmit process readings
 
-    received = ftdi_read_data(ctx, response_array, 280);
+    received = ftdi_read_data(ctx, read_array, 280);
     if (received < 0) {
       printf("Error: ftdi_read_data(%d)\n", received);
       return received;
@@ -314,23 +302,23 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
 
   printf("Rec:");
   for (i = 0; i < received; i++) {
-    printf("%u, ", response_array[i]);
+    printf("%u, ", read_array[i]);
   }
   printf("\n");
 
   printf("CRC passes... ");
-  if (crc_pass(response_array, 27)) {
+  if (crc_pass(read_array, received - 2)) {
     printf("Yes.\n");
   }
   else {
     printf("No.\n");
   }
 
-  readings->ADC_VALUE = float_from_byte_array(response_array, 3);
-  readings->ELEC_VALUE = float_from_byte_array(response_array, 7);
-  readings->PROCESS_VARIABLE = float_from_byte_array(response_array, 11);
-  readings->MA_OUT = float_from_byte_array(response_array, 15);
-  readings->CJ_TEMP = float_from_byte_array(response_array, 19);
+  readings->ADC_VALUE = float_from_byte_array(read_array, 3);
+  readings->ELEC_VALUE = float_from_byte_array(read_array, 7);
+  readings->PROCESS_VARIABLE = float_from_byte_array(read_array, 11);
+  readings->MA_OUT = float_from_byte_array(read_array, 15);
+  readings->CJ_TEMP = float_from_byte_array(read_array, 19);
 
   return 0;
 }
@@ -338,8 +326,8 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
 
 int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
 {
-  uint8_t output_array[280];
-  uint8_t input_array[280];
+  uint8_t write_array[280];
+  uint8_t read_array[280];
 
   int i;
   int len = -1;
@@ -347,19 +335,19 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
   int received;
 
   for (i = 0; i < 280; i++) {
-    output_array[i] = 0;
-    input_array[i] = 0;
+    write_array[i] = 0;
+    read_array[i] = 0;
   }
   
-  len = generate_message(SEM_COMMANDS_cREAD_CONFIG, output_array, 0);
+  len = generate_message(SEM_COMMANDS_cREAD_CONFIG, write_array, 0);
   if (len == -1) {
     printf("Failed to generate message.\n");
     return -1;
   }
 
-  for (i = 0; (i < 40 && (input_array[1] != 33)); i++) { 
+  for (i = 0; (i < 40 && (read_array[1] != 33)); i++) { 
     // run until positive response received, or 40 negative replies (10 seconds)
-    written = ftdi_write_data(ctx, output_array, len);
+    written = ftdi_write_data(ctx, write_array, len);
     if (written < 0) {
       printf("Error: ftdi_write_data %d (%s)\n", written,
     	     ftdi_get_error_string(ctx));
@@ -370,7 +358,7 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
 
     usleep(250000); // give the device some time to transmit process readings
 
-    received = ftdi_read_data(ctx, input_array, 280);
+    received = ftdi_read_data(ctx, read_array, 280);
     if (received < 0) {
       printf("Error: ftdi_read_data %d (%s)\n", 
 	     received, ftdi_get_error_string(ctx));
@@ -379,135 +367,14 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
     printf("Bytes received: %d\n", received);
   }
 
-  array_to_CONFIG_DATA(cal, input_array);
+  array_to_CONFIG_DATA(cal, read_array);
   
   return 0;
 }
 
-/* int SEM710_write_config(, CONFIG_DATA *cal) */
-/* { */
-/*   uint8_t byte_array[41]; */
-/*   int i; */
-/*   int len = -1; */
-/*   uint8_t output_array[280]; */
-/*   int err; */
-  
-/*   byte_array[0] = cal->tc_code; */
-/*   byte_array[1] = cal->up_scale; */
-/*   byte_array[2] = cal->units; */
-/*   byte_array[3] = cal->model_type; */
-/*   byte_array[4] = cal->vout_range; */
-/*   byte_array[5] = cal->action_A; */
-/*   byte_array[6] = cal->action_B; */
-/*   byte_array[7] = cal->spare; */
-/*   i = float_into_byte_array(byte_array, 8, cal->low_range); */
-/*   i = float_into_byte_array(byte_array, i, cal->high_range); */
-/*   i = float_into_byte_array(byte_array, i, cal->low_trim); */
-/*   i = float_into_byte_array(byte_array, i, cal->high_trim); */
-/*   i = float_into_byte_array(byte_array, i, cal->setpoint_A); */
-/*   i = float_into_byte_array(byte_array, i, cal->hyst_A); */
-/*   i = float_into_byte_array(byte_array, i, cal->setpoint_B); */
-/*   i = float_into_byte_array(byte_array, i, cal->hyst_B);   */
+int SEM710_auto_cal(struct ftdi_context *ctx)
+{
 
-/*   len = generate_message(SEM_COMMANDS_cSET_CONFIG, byte_array, i-1); */
-/*   if (len <= 0) { */
-/*     printf("Error generating message"); */
-/*     return -1; */
-/*   } */
-
-/*   printf("Message: [%u,", byte_array[0]); */
-/*   for (i = 1; i < len - 1; i++) { */
-/*     printf(" %u,", byte_array[i]); */
-/*   } */
-/*   printf(" %u]\n", byte_array[len - 1]); */
-  
-/* } */
-
-/* int SEM710_read_cal(, UNIVERSAL_CALIBRATION *cal) */
-/* { */
-/*   uint8_t byte_array[280]; */
-/*   uint8_t output_array[280]; */
-/*   byte_array[0] = 0; */
-/*   int len = -1; */
-/*   int err; */
-  
-/*   len = generate_message(SEM_COMMANDS_cREAD_CAL, byte_array, 0); */
-/*   if (len <= 0) { */
-/*     printf("Error generating message.\n"); */
-/*     return -1; */
-/*   } */
-
-/* } */
-
-/* int SEM710_set_cal(, UNIVERSAL_CALIBRATION *cal) */
-/* { */
-/*   uint8_t byte_array[280]; */
-/*   uint8_t output_array[280]; */
-/*   int err; */
-/*   int len = -1; */
-/*   int i = 0; */
-  
-/*   byte_array[i] = 0; */
-/*   byte_array[++i] = 0; */
-/*   i = float_into_byte_array(byte_array, i, cal->lo_mv); */
-/*   i = float_into_byte_array(byte_array, i, cal->hi_mv); */
-/*   i = float_into_byte_array(byte_array, i, cal->lo_ma); */
-/*   i = float_into_byte_array(byte_array, i, cal->hi_ma); */
-/*   i = float_into_byte_array(byte_array, i, cal->lo_rtd); */
-/*   i = float_into_byte_array(byte_array, i, cal->hi_rtd); */
-/*   i = float_into_byte_array(byte_array, i, cal->lo_ma_in); */
-/*   i = float_into_byte_array(byte_array, i, cal->hi_ma_in); */
-
-/*   len = generate_message(SEM_COMMANDS_cSET_CAL, byte_array, i - 1); */
-/*   if (len <= 0) { */
-/*     printf("Error generating message\n"); */
-/*     return -1; */
-/*   } */
-
-/* } */
-
-/* int SEM710_enable_retran() */
-/* { */
-/*   uint8_t byte_array[280]; */
-/*   uint8_t output_array[280]; */
-/*   int len = -1; */
-/*   int err; */
-
-/*   byte_array[0] = 0; */
-  
-/*   len = generate_message(SEM_COMMANDS_cPRESET_ENABLE, byte_array, 0); */
-/*   if (len <= 0) { */
-/*     printf("Error generating message\n"); */
-/*     return -1; */
-/*   } */
-
-/* } */
-
-/* int SEM710_self_cal(, int command) */
-/* { */
-/*   /\* */
-/*     cal commands are: */
-/*     SEM_COMMANDS_cSELF_CAL_100R */
-/*     SEM_COMMANDS_cSELF_CAL_300R */
-/*     SEM_COMMANDS_cSELF_CAL_0mV */
-/*     SEM_COMMANDS_cSELF_CAL_50mv */
-/*     SEM_COMMANDS_cSELF_CAL_0mA */
-/*     SEM_COMMANDS_cSELF_CAL_20mA */
-/*    *\/ */
-/*   uint8_t byte_array[280]; */
-/*   uint8_t output_array[280]; */
-/*   int len = -1; */
-/*   int err; */
-
-/*   byte_array[0] = 0; */
-  
-/*   len = generate_message(command, byte_array, 0); */
-/*   if (len <= 0) { */
-/*     printf("Error generating message\n"); */
-/*     return -1; */
-/*   } */
-  
-
-/* } */
+}
 
 #endif
