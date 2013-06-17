@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -8,9 +8,9 @@
 #define ID2 "DEVICE_ID_PRODUCT"
 #define ID3 "DEVICE_ID_SERIAL"
 
-/* get index of first occurrence of chr in string; not present returns -1 */
 int get_char_index(char *string, char chr)
 {
+  /* get index of first occurrence of chr in string; not present returns -1 */
   int index;
 
   index = 0;
@@ -23,12 +23,12 @@ int get_char_index(char *string, char chr)
   return -1; /* not found */
 }
 
-/*
-   get the ID equal to the string phrase in the given line
-   returns 1 if id found, and 0 if file is malformed
-*/
-int get_id_value(char *line, int *id_val)
+int get_id_value(char *line, int *id_val) 
 {
+/* 
+   get the ID equal to the string phrase in the given line
+   returns 1 if id found, and 0 if file is malformed 
+*/
   int eq_index;
   int eol_index;
   int diff;
@@ -44,7 +44,7 @@ int get_id_value(char *line, int *id_val)
 
   diff = eol_index - eq_index;
   val_str = (char *) malloc(diff);
-
+  
   for (i = 0; i < diff - 1; i++) {
     val_str[i] = line[eq_index+1 + i];
   }
@@ -59,7 +59,7 @@ int get_specified_id (FILE *f, char *id_phrase, int *id_val)
 {
   int found;
   char line[256];
-
+  
   rewind(f);
   found = 0;
   while (!feof(f)) {

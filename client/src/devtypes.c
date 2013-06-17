@@ -1,7 +1,95 @@
 #include "devtypes.h"
-#include <stdio.h>
+#include "array.h"
 
-void SEM710_display_readings(SEM710_READINGS *readings)
+#include <stdio.h>
+#include <assert.h>
+
+uint8_t get_confirmation_byte(SEM_COMMANDS c) {
+  /*
+     Returns: the expected first byte after start byte in incoming message from
+     device for the given command c.
+     Ugly, ugly function... I'll leave the unused commands at 0 in case someone
+     down the line wanted to use them, but with the SEM710 you'll likely only
+     use a few of these.
+  */
+  switch(c) {
+  case SEM_COMMANDS_cACK:
+    return 0;
+  case SEM_COMMANDS_cNAK:
+    return 0;
+  case SEM_COMMANDS_cREAD_CAL:
+    return 0;
+  case SEM_COMMANDS_cREAD_CONFIG:
+    return 33;
+  case SEM_COMMANDS_cREAD_PROCESS:
+    return 34;
+  case SEM_COMMANDS_cSELF_CAL_0mv:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_50mv:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_100R:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_300R:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_20mA:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_0mA:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_200mV:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_1V:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_10V:
+    return 0;
+  case SEM_COMMANDS_cSELF_CAL_slide_wire:
+    return 0;
+  case SEM_COMMANDS_cPRESET_4ma_COUNT:
+    return 0;
+  case SEM_COMMANDS_cPRESET_12ma_COUNT:
+    return 0;
+  case SEM_COMMANDS_cPRESET_20ma_COUNT:
+    return 0;
+  case SEM_COMMANDS_cPRESET_ENABLE:
+    return 0;
+  case SEM_COMMANDS_cSET_CAL:
+    return 0;
+  case SEM_COMMANDS_cSET_CONFIG:
+    return 0;
+  case SEM_COMMANDS_cREAD_RANGEA:
+    return 0;
+  case SEM_COMMANDS_cREAD_RANGEB:
+    return 0;
+  case SEM_COMMANDS_cREAD_RANGEC:
+    return 0;
+  case SEM_COMMANDS_cREAD_RANGED:
+    return 0;
+  case SEM_COMMANDS_cWRITE_RANGEA:
+    return 0;
+  case SEM_COMMANDS_cWRITE_RANGEB:
+    return 0;
+  case SEM_COMMANDS_cWRITE_RANGEC:
+    return 0;
+  case SEM_COMMANDS_cWRITE_RANGED:
+    return 0;
+  case SEM_COMMANDS_cidentify:
+    return 0;
+  }
+  return 0;
+}
+
+void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
+		  int array_len)
+{
+  assert (array_len > 23);
+
+  readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
+  readings->ELEC_VALUE = float_from_byte_array(byte_array, 7);
+  readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11);
+  readings->MA_OUT = float_from_byte_array(byte_array, 15);
+  readings->CJ_TEMP = float_from_byte_array(byte_array, 19);
+}
+
+void display_readings(SEM710_READINGS *readings)
 {
   printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
   printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE);
@@ -10,32 +98,10 @@ void SEM710_display_readings(SEM710_READINGS *readings)
   printf("CJ_TEMP=%f\n", readings->CJ_TEMP);
 }
 
-void CONFIG_DATA_init(CONFIG_DATA *block)
+void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len)
 {
-  block->tc_code = 8;
-  block->up_scale = 1;
-  block->units = 0;
-  block->model_type = 0;
-  block->vout_range = 0;
-
-  block->action_A = 1;
-  block->action_B = 1;
-  block->spare = 0;
-  block->low_range = 0.0;
-  block->high_range = 100.0;
-  block->low_trim = 0.0;
-  block->high_trim = 0.0;
-
-  block->setpoint_A = 100.0;
-  block->hyst_A = 0.1;
-
-  block->setpoint_B = 100.0;
-  block->hyst_B = 0.1;
-}
-
-void array_to_CONFIG_DATA(CONFIG_DATA *cal, uint8_t *input_array)
-{
-  // transfers the contents of the given byte array into the CONFIG_DATA
+  /* transfers the contents of the given byte array into the CONFIG_DATA */
+  assert (array_len > 43);
 
   cal->tc_code = input_array[3];
   cal->up_scale = input_array[4];
@@ -55,7 +121,7 @@ void array_to_CONFIG_DATA(CONFIG_DATA *cal, uint8_t *input_array)
   cal->hyst_B = float_from_byte_array(input_array, 39);
 }
 
-void display_CONFIG_DATA(CONFIG_DATA *cal)
+void display_config(CONFIG_DATA *cal)
 {
   printf("tc_code = %d\n", cal->tc_code);
   printf("up_scale = %d\n", cal->up_scale);
@@ -96,3 +162,4 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->title);
   free(config_block->units);
 }
+

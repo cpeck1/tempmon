@@ -1,5 +1,5 @@
 #ifndef __INC_ARRAY_H
-#define  __INC_ARRAY_H
+#define __INC_ARRAY_H
 
 #include <stdint.h>
 
