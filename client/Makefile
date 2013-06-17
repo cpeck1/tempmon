@@ -10,54 +10,69 @@ BUILD_DIR_FULL_PATH := $(CURDIR)/$(BUILD_DIR)
 INCLUDE_PATH := . src test
 
 # filenames only - no paths required
-SRCS := \
+COMMON_SRCS := \
 	array.c \
 	devtypes.c \
 	fparse.c \
-	main.c \
 	usb-operations.c
 
+SRCS := \
+	$(COMMON_SRCS) \
+	main.c \
+
 TEST_SRCS := \
-	array_t.c \
-	fparse_t.c \
-	usb-operations.c \
-	test_func.c
+	$(COMMON_SRCS) \
+	array_test.c \
+	fparse_test.c \
+	test_funcs.c \
+	test_main.c
 
 LIBS := -lm -lftdi -lusb-1.0
 LIB_PATH := .
 
-CC := gcc
-CXX := $(CC)
 MAKEDEPEND := cpp
 BUILD_DIR_FULL_PATH := $(CURDIR)/$(BUILD_DIR)
-VPATH := $(CURDIR) $(INCLUDE_PATH) $(BUILD_DIR)
-OBJS := $(addsuffix .o, $(basename $(notdir $(SRCS))))
-OBJS_RELATIVE_PATH := $(addprefix $(BUILD_DIR)/, $(OBJS))
-
-DEPS := $(addsuffix .P, $(basename $(notdir $(SRC))))
-DEPS_FULL_PATH := $(addprefix $(CURDIR)/$(BUILD_DIR)/, $(DEPS))
+VPATH := $(CURDIR) $(INCLUDE_PATH)
 
 CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -Wno-write-strings
 LDFLAGS += $(foreach path,$(LIB_PATH),-L$(path))
 
+ifeq ($(MAKECMDGOALS),test)
+  SRCS := $(TEST_SRCS)
+  CC := g++
+  CXXFLAGS := $(CFLAGS)
+  LIBS += -lpthread -lgtest
+else
+  CC := gcc
+endif
+
+FILES = $(notdir $(SRCS))
+OBJS := $(addprefix $(BUILD_DIR)/, $(FILES:.c=.o))
+DEPS := $(OBJ:.o=.d)
+
+.PHONY : test clean
+
 all: $(APP)
 
+test: $(TEST_APP)
+
 $(APP) : $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS_RELATIVE_PATH) $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+$(TEST_APP): $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
-	rm -rf $(BUILD_DIR)/*.[odP] $(APP)
+	rm -rf $(BUILD_DIR)/*.[odP] $(APP) $(TEST_APP)
 
 #
 # This rule also creates the dependency files
 #
-%.o : %.c
-	$(COMPILE.c) -MD -o $(BUILD_DIR)/$@ $<
+$(BUILD_DIR)/%.o : %.c
+	$(CC) $(CFLAGS) -MD -o $@ $<
 	@cp $(BUILD_DIR)/$*.d $(BUILD_DIR)/$*.P; \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 		-e '/^$$/ d' -e 's/$$/ :/' < $(BUILD_DIR)/$*.d >> $(BUILD_DIR)/$*.P; \
 	rm -f $(BUILD_DIR)/$*.d
 
-ifneq ($(MAKECMDGOALS),clean)
--include $(DEPS_FULL_PATH)
-endif
+-include $(DEPS)

@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SEM710_BAUDRATE 19200
 
 typedef enum {
@@ -145,5 +149,9 @@ typedef struct {
 void CONFIG_BLOCK_init(CONFIG_BLOCK *config_block);
 
 void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INC_DEVTYPES_H*/

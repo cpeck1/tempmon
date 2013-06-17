@@ -145,7 +145,7 @@ int prepare_device(struct ftdi_context *ctx)
     return err;
   }
 
-  err = ftdi_set_line_property(ctx, 8, 0, 0);
+  err = ftdi_set_line_property(ctx, BITS_8, STOP_BIT_1, NONE);
   if (err) {
     printf("Error: ftdi_set_line_property(%d)\n", err);
     return err;
@@ -286,7 +286,7 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
   for (i = 0; i < 280; i++) {
     incoming_buff[i] = 0;
   }
-  confirmation_byte = get_confirmation_byte(command);
+  confirmation_byte = get_confirmation_byte((SEM_COMMANDS)command);
 
   outgoing_bytes[0] = 0;
   len = generate_message(command, outgoing_bytes, 0);

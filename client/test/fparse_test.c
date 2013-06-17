@@ -1,9 +1,10 @@
-#ifndef F_PARSE_TEST
-#define F_PARSE_TEST
+#include "fparse.h"
+
+#include <stdio.h>
 
 #define TEST_FILE "/home/cpeck1/workspace/tempmon/tempmon/client/tests/testfile.ini"
-#include <stdio.h>
-#include "test_funcs.c"
+
+/*
 
 int file_parse_test(void)
 {
@@ -21,16 +22,16 @@ int file_parse_test(void)
   int val;
   FILE *f;
 
-  test_desc = xbf; /* magic */
+  test_desc = xbf; // magic
   got = xbf;
-  test = xbf; 
+  test = xbf;
 
   test_number = 0;
   tests_passed = 0;
 
-  /******************************************/
+  // *********************
   test_desc = "Testing get_char_index(case 0)";
-  /******************************************/
+  // *********************
   test_number++;
 
   test = "a";
@@ -41,7 +42,7 @@ int file_parse_test(void)
   else {
     sprintf(got, "%d", index);
     report_error(test_number, test_desc, "-1", got);
-  }  
+  }
 
   test_number++;
   test = "b";
@@ -54,9 +55,9 @@ int file_parse_test(void)
     report_error(test_number, test_desc, "0", got);
   }
 
-  /*******************************************/
+  // *********************
   test_desc = "Testing get_char_index(case 1)";
-  /*******************************************/
+  // *********************
   test = "abcdefghijklmnopqrstuvwxyz";
 
   test_number++;
@@ -89,9 +90,9 @@ int file_parse_test(void)
     report_error(test_number, test_desc, "13", got);
   }
 
-  /*****************************************/
+  // *********************
   test_desc = "Testing get_id_value(case 0)";
-  /*****************************************/
+  // *********************
   test_number++;
 
   test = "This_val=booga";
@@ -114,10 +115,10 @@ int file_parse_test(void)
     sprintf(got, "%d", index);
     report_error(test_number, test_desc, "0", got);
   }
-  
-  /*****************************************/
+
+  // *********************
   test_desc = "Testing get_id_value(case 1)";
-  /*****************************************/
+  // *********************
   test_number++;
 
   test = "This_val=1\n";
@@ -131,7 +132,7 @@ int file_parse_test(void)
   }
 
   test_number++;
-  
+
   test = "This_val=35623\n";
   found = get_id_value(test, &val);
   if ((found != 0) && (val == 35623)) {
@@ -143,9 +144,9 @@ int file_parse_test(void)
   }
 
 
-  /*********************************************/
+  // *********************
   test_desc = "Testing get_specified_id(case 0)";
-  /*********************************************/
+  // *********************
   f = fopen(TEST_FILE, "r");
 
   test_number++;
@@ -170,12 +171,12 @@ int file_parse_test(void)
     report_error(test_number, test_desc, "0", got);
   }
 
-  /*********************************************/
+  // *********************
   test_desc = "Testing get_specified_id(case 1)";
-  /*********************************************/
+  // *********************
 
   test_number++;
-  
+
   found = get_specified_id(f, "real_id", &val);
   if (val == 3) {
     tests_passed++;
@@ -186,7 +187,7 @@ int file_parse_test(void)
   }
 
   test_number++;
-  
+
   found = get_specified_id(f, "realer_id", &val);
   if (val == 12345) {
     tests_passed++;
@@ -199,4 +200,4 @@ int file_parse_test(void)
   return 0;
 }
 
-#endif
+*/

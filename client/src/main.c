@@ -3,12 +3,9 @@
 
 #include <stdio.h>
 
-#include "src/fparse.h"
-#include "src/devtypes.h"
-#include "src/usb-operations.h"
-
-//#include "tests/array_t.c"
-//#include "tests/fparse_t.c"
+#include "fparse.h"
+#include "devtypes.h"
+#include "usb-operations.h"
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
