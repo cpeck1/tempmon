@@ -2,115 +2,97 @@
 #define _DEVTYPES
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include "array.c"
 
-enum SEM_COMMANDS {
-  SEM_COMMANDS_cACK = 0xA,
-  SEM_COMMANDS_cNAK = 0xB,
-  SEM_COMMANDS_cREAD_CAL = 0x0,
-  SEM_COMMANDS_cREAD_CONFIG = 0x1,
-  SEM_COMMANDS_cREAD_PROCESS = 0x2,
-  SEM_COMMANDS_cSELF_CAL_0mv = 0x3,
-  SEM_COMMANDS_cSELF_CAL_50mv = 0x4,
-  SEM_COMMANDS_cSELF_CAL_100R = 0x30,
-  SEM_COMMANDS_cSELF_CAL_300R = 0x31,
-  SEM_COMMANDS_cSELF_CAL_20mA = 0x32,
-  SEM_COMMANDS_cSELF_CAL_0mA = 0x33,
-  SEM_COMMANDS_cSELF_CAL_200mV = 0x34,
-  SEM_COMMANDS_cSELF_CAL_1V = 0x35,
-  SEM_COMMANDS_cSELF_CAL_10V = 0x36,
-  SEM_COMMANDS_cSELF_CAL_slide_wire = 0x37,
-  SEM_COMMANDS_cPRESET_4ma_COUNT = 0x5,
-  SEM_COMMANDS_cPRESET_12ma_COUNT = 0x6,
-  SEM_COMMANDS_cPRESET_20ma_COUNT = 0x7,
-  SEM_COMMANDS_cPRESET_ENABLE = 0x8,
-  SEM_COMMANDS_cSET_CAL = 0x10,
-  SEM_COMMANDS_cSET_CONFIG = 0x11,
-  SEM_COMMANDS_cREAD_RANGEA = 0x50,
-  SEM_COMMANDS_cREAD_RANGEB = 0x51,
-  SEM_COMMANDS_cREAD_RANGEC = 0x52,
-  SEM_COMMANDS_cREAD_RANGED = 0x53,
-  SEM_COMMANDS_cWRITE_RANGEA = 0x40,
-  SEM_COMMANDS_cWRITE_RANGEB = 0x41,
-  SEM_COMMANDS_cWRITE_RANGEC = 0x42,
-  SEM_COMMANDS_cWRITE_RANGED = 0x43,
-  SEM_COMMANDS_cidentify = 0x60
-};
+#define SEM710_BAUDRATE 19200
 
-uint8_t get_confirmation_byte(enum SEM_COMMANDS c) {
-  /* Returns: the first byte after start byte in incoming message from device
-     Ugly, ugly function... I'll leave the unused commands at 0 in case someone
-     down the line wanted to use them, but with the SEM710 you'll likely only
-     use a few of these.
-  */
-  switch(c) {
-  case SEM_COMMANDS_cACK:
-    return 0;
-  case SEM_COMMANDS_cNAK:
-    return 0;
-  case SEM_COMMANDS_cREAD_CAL:
-    return 0;
-  case SEM_COMMANDS_cREAD_CONFIG:
-    return 33;
-  case SEM_COMMANDS_cREAD_PROCESS:
-    return 34;
-  case SEM_COMMANDS_cSELF_CAL_0mv:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_50mv:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_100R:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_300R:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_20mA:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_0mA:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_200mV:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_1V:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_10V:
-    return 0;
-  case SEM_COMMANDS_cSELF_CAL_slide_wire:
-    return 0; 
-  case SEM_COMMANDS_cPRESET_4ma_COUNT:
-    return 0; 
-  case SEM_COMMANDS_cPRESET_12ma_COUNT:
-    return 0; 
-  case SEM_COMMANDS_cPRESET_20ma_COUNT:
-    return 0; 
-  case SEM_COMMANDS_cPRESET_ENABLE:
-    return 0; 
-  case SEM_COMMANDS_cSET_CAL:
-    return 0; 
-  case SEM_COMMANDS_cSET_CONFIG:
-    return 0; 
-  case SEM_COMMANDS_cREAD_RANGEA:
-    return 0; 
-  case SEM_COMMANDS_cREAD_RANGEB:
-    return 0; 
-  case SEM_COMMANDS_cREAD_RANGEC:
-    return 0; 
-  case SEM_COMMANDS_cREAD_RANGED:
-    return 0; 
-  case SEM_COMMANDS_cWRITE_RANGEA:
-    return 0; 
-  case SEM_COMMANDS_cWRITE_RANGEB:
-    return 0; 
-  case SEM_COMMANDS_cWRITE_RANGEC:
-    return 0; 
-  case SEM_COMMANDS_cWRITE_RANGED:
-    return 0; 
-  case SEM_COMMANDS_cidentify:
-    return 0; 
-  }
-  return 0;
-}
+#define SEM_COMMANDS_cACK 0xA
+#define SEM_COMMANDS_cNAK 0xB
+#define SEM_COMMANDS_cREAD_CAL 0x0
+#define SEM_COMMANDS_cREAD_CONFIG 0x1
+#define SEM_COMMANDS_cREAD_PROCESS 0x2
+#define SEM_COMMANDS_cSELF_CAL_0mv 0x3
+#define SEM_COMMANDS_cSELF_CAL_50mv 0x4
+#define SEM_COMMANDS_cSELF_CAL_100R 0x30
+#define SEM_COMMANDS_cSELF_CAL_300R 0x31
+#define SEM_COMMANDS_cSELF_CAL_20mA 0x32
+#define SEM_COMMANDS_cSELF_CAL_0mA 0x33  
+#define SEM_COMMANDS_cSELF_CAL_200mV 0x34
+#define SEM_COMMANDS_cSELF_CAL_1V 0x35
+#define SEM_COMMANDS_cSELF_CAL_10V 0x36
+#define SEM_COMMANDS_cSELF_CAL_slide_wire 0x37
+#define SEM_COMMANDS_cPRESET_4ma_COUNT 0x5
+#define SEM_COMMANDS_cPRESET_12ma_COUNT 0x6
+#define SEM_COMMANDS_cPRESET_20ma_COUNT 0x7
+#define SEM_COMMANDS_cPRESET_ENABLE 0x8
+#define SEM_COMMANDS_cSET_CAL 0x10
+#define SEM_COMMANDS_cSET_CONFIG 0x11
+#define SEM_COMMANDS_cREAD_RANGEA 0x50
+#define SEM_COMMANDS_cREAD_RANGEB 0x51
+#define SEM_COMMANDS_cREAD_RANGEC 0x52
+#define SEM_COMMANDS_cREAD_RANGED 0x53
+#define SEM_COMMANDS_cWRITE_RANGEA 0x40
+#define SEM_COMMANDS_cWRITE_RANGEB 0x41
+#define SEM_COMMANDS_cWRITE_RANGEC 0x42
+#define SEM_COMMANDS_cWRITE_RANGED 0x43
+#define SEM_COMMANDS_cidentify 0x60
+
+#define SEM_COMMANDS_cREAD_SEM160_CAL 0x60
+#define SEM_COMMANDS_cREAD_SEM160_CONFIG 0x61
+#define SEM_COMMANDS_cREAD_SEM160_ALIGNMENT 0x62
+#define SEM_COMMANDS_cREAD_SEM160_PROCESS 0x63
+#define SEM_COMMANDS_cREAD_SEM160_DEVICE 0x64
+#define SEM_COMMANDS_cPRESET_ch2_4ma_COUNT 0x70
+#define SEM_COMMANDS_cPRESET_ch2_12ma_COUNT 0x71
+#define SEM_COMMANDS_cPRESET_ch2_20ma_COUNT 0x72
+#define SEM_COMMANDS_cPRESET_ch2_ENABLE 0x73
+
+#define SEM_COMMANDS_cALIGN_RH_1  0x65
+#define SEM_COMMANDS_cALIGN_RH_2  0x66
+#define SEM_COMMANDS_cALIGN_T_1  0x67
+#define SEM_COMMANDS_cALIGN_T_2 0x68
+
+#define SEM_COMMANDS_cWRITE_SEM160_CALIBRATION 0x6A
+#define SEM_COMMANDS_cWRITE_SEM160_CONFIG 0x6B
+#define SEM_COMMANDS_cWRITE_SEM160_ALIGNMENT 0x6C
+#define SEM_COMMANDS_cWRITE_SEM160_DEVICE 0x6D
+
+#define SEM_COMMANDS_cWRITE_TTR_4_5MA_CAL 0xA3
+#define SEM_COMMANDS_cWRITE_TTR_19_5MA_CAL 0xA4
+#define SEM_COMMANDS_cWRITE_TTR_1_5V_CAL 0xA5
+#define SEM_COMMANDS_cWRITE_TTR_9_5V_CAL 0xA6
+#define SEM_COMMANDS_cWRITE_TTx200_IN_GAIN_1 0x30
+#define SEM_COMMANDS_cWRITE_TTx200_IN_GAIN_2 0x31
+#define SEM_COMMANDS_cWRITE_TTx200_IN_GAIN_4 0xA7
+
+#define SEM_COMMANDS_cWRITE_BLOCK_2_0_MA_CAL 0xA3
+#define SEM_COMMANDS_cWRITE_BLOCK_19_5_MA_CAL 0xA4
+#define SEM_COMMANDS_cWRITE_BLOCK_0_V_CAL 0xA5
+#define SEM_COMMANDS_cWRITE_BLOCK_10V_CAL 0xA6
+#define SEM_COMMANDS_cWRITE_BLOCK_CALIBRATION 0xA0
+#define SEM_COMMANDS_cREAD_BLOCK_CALIBRATION 0xA8
+#define SEM_COMMANDS_cWRITE_block_INPUT_CONFIG 0xA1
+#define SEM_COMMANDS_cWRITE_BLOCK_OUTPUT_CONFIG 0xA2
+#define SEM_COMMANDS_cREAD_BLOCK_INPUT_CONFIG 0xA9
+#define SEM_COMMANDS_cREAD_BLOCK_OUTPUT_CONFIG 0xAA
+#define SEM_COMMANDS_cREAD_BLOCK_PROCESS 0x2
+
+#define SEM_COMMANDS_cWRITE_DM2000_CONFIG 0x7B
+
+#define SEM_COMMANDS_cREAD_DM2000_CONFIG 0x81
+
+#define SEM_COMMANDS_cRESET_TOTAL 0xF0
+
+#define COMMAND_FUNCTION_READ_DATA 4
+#define COMMAND_FUNCTION_WRITE_DATA 16
+#define COMMAND_FUNCTION_SELF_CAL_IN 7
+#define COMMAND_FUNCTION_PRESET 17
+#define COMMAND_FUNCTION_CAL_OUT 18
+
+#define FT_DATA_BITS_8 8
 
 typedef enum { 
-  WAITING_FOR_START,
+  WAITING_FOR_START, 
   WAITING_FOR_REPLY_START, 
   WAITING_FOR_COMMAND, 
   WAITING_FOR_LEN, 
@@ -131,7 +113,7 @@ WAITING,
   GET_CRC_LOW,
   GET_CRC_HIGH,
   ENGAGED,
-  MESSAGE_NOT_VALID
+  MESSAGE_NOT_VALID,
 } COMMS_RX_STATE;
 
 typedef struct {
@@ -142,19 +124,7 @@ typedef struct {
   float CJ_TEMP;
 } SEM710_READINGS;
 
-void get_readings(SEM710_READINGS *readings, 
-			 uint8_t *byte_array, int array_len)
-{
-  assert (array_len > 23);
-  
-  readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
-  readings->ELEC_VALUE = float_from_byte_array(byte_array, 7);
-  readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11);
-  readings->MA_OUT = float_from_byte_array(byte_array, 15);
-  readings->CJ_TEMP = float_from_byte_array(byte_array, 19);
-}
-
-void display_readings(SEM710_READINGS *readings)
+void SEM710_display_readings(SEM710_READINGS *readings)
 {
   printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
   printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE);
@@ -189,11 +159,33 @@ typedef struct {
   char comment[256];
 } CONFIG_DATA;
 
-void get_config_data(CONFIG_DATA *cal, uint8_t *input_array, int input_len)
+void CONFIG_DATA_init(CONFIG_DATA *block)
 {
-  /* transfers the contents of the given byte array into the CONFIG_DATA */
-  assert (input_len > 43);
+  block->tc_code = 8;
+  block->up_scale = 1;
+  block->units = 0;
+  block->model_type = 0;
+  block->vout_range = 0;
+ 
+  block->action_A = 1;
+  block->action_B = 1;
+  block->spare = 0;
+  block->low_range = 0.0;
+  block->high_range = 100.0;
+  block->low_trim = 0.0;
+  block->high_trim = 0.0;
 
+  block->setpoint_A = 100.0;
+  block->hyst_A = 0.1;
+
+  block->setpoint_B = 100.0;
+  block->hyst_B = 0.1;
+}
+
+void array_to_CONFIG_DATA(CONFIG_DATA *cal, uint8_t *input_array)
+{
+  // transfers the contents of the given byte array into the CONFIG_DATA
+  
   cal->tc_code = input_array[3];
   cal->up_scale = input_array[4];
   cal->units = input_array[5];
@@ -212,7 +204,7 @@ void get_config_data(CONFIG_DATA *cal, uint8_t *input_array, int input_len)
   cal->hyst_B = float_from_byte_array(input_array, 39);
 }
 
-void display_config_data(CONFIG_DATA *cal)
+void display_CONFIG_DATA(CONFIG_DATA *cal)
 {
   printf("tc_code = %d\n", cal->tc_code);
   printf("up_scale = %d\n", cal->up_scale);
@@ -233,7 +225,7 @@ void display_config_data(CONFIG_DATA *cal)
 }
 
 typedef struct {
-  uint8_t straight_from_programming; 
+  uint8_t straight_from_programming; // will always be 0, used on first power up
   uint8_t dummy;
   float lo_mv;
   float hi_mv;
@@ -250,6 +242,13 @@ typedef struct {
   float hi_voltage_output;
 } UNIVERSAL_CALIBRATION;
 
+/* void UNIVERSAL_CALIBRATION_init(UNIVERSAL_CALIBRATION *cal) */
+/* { */
+/*   // set the unical's vars to their default value */
+  
+/* } */
+
+
 typedef struct {
   float *fp;
   float *config_input_float;
@@ -261,7 +260,7 @@ typedef struct {
   char *tag_number;
 } CONFIG_BLOCK;
 
-int CONFIG_BLOCK_init(CONFIG_BLOCK *config_block)
+void CONFIG_BLOCK_init(CONFIG_BLOCK *config_block)
 {
   config_block->fp = (float *) malloc((sizeof(float)*48));
   config_block->config_input_float = (float *) malloc(sizeof(float)*4);
@@ -271,21 +270,6 @@ int CONFIG_BLOCK_init(CONFIG_BLOCK *config_block)
   config_block->config_output_floats = (float *) malloc(sizeof(float)*8);
   config_block->config_output_int = (short *) malloc(sizeof(short)*4);
   config_block->tag_number = (char *) malloc(sizeof(char)*20);
-
-  if ( /* make sure malloc did its job */
-      (config_block->fp == NULL)                   ||
-      (config_block->config_input_float == NULL)   ||
-      (config_block->config_input_byte == NULL)    ||
-      (config_block->title == NULL)                ||
-      (config_block->units == NULL)                ||
-      (config_block->config_output_floats == NULL) ||
-      (config_block->config_output_int == NULL)    ||
-      (config_block->tag_number == NULL)           
-      ) 
-    {
-      return -1;
-    }
-  return 0;
 }
 
 void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
@@ -296,5 +280,7 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->title);
   free(config_block->units);
 }
+
+
 
 #endif
