@@ -7,12 +7,12 @@
 #include <time.h>
 #include <ftdi.h>
 
-#include "src/fparse.c"
+#include "src/fparse.h"
 #include "src/devtypes.h"
-#include "src/usb-operations.c"
+#include "src/usb-operations.h"
 
-#include "tests/array_t.c"
-#include "tests/fparse_t.c"
+//#include "tests/array_t.c"
+//#include "tests/fparse_t.c"
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
@@ -39,13 +39,14 @@ int get_user_selection()
 	  return number;
 	}
     }
+  return 0;
 }
 
 
 int main()
 {
-  file_parse_test();
-  array_test();
+   //file_parse_test();
+   //array_test();
 
   // Get device ids from file:
   int product_id;
@@ -63,7 +64,7 @@ int main()
   //////////////////////////
 
   // unimplemented stub //
- 
+
   ///////////////////////////
   // 2: Open SEM710 device //
   ///////////////////////////
@@ -72,10 +73,10 @@ int main()
   int prep_failed;
   struct ftdi_context *ftHandle;
   ftHandle = ftdi_new();
-  
+
   detach_failed = detach_device_kernel(vendor_id, product_id);
   if (detach_failed) { return 1; }
-  
+
   open_failed = open_device(ftHandle, vendor_id, product_id);
   if (open_failed) { return 1; }
 
@@ -83,7 +84,7 @@ int main()
   if (prep_failed) { return 1; }
 
   // 2.5: report open status
-  
+
   ///////////////////////////////////////////
   // Communication to server unimplemented //
   ///////////////////////////////////////////
@@ -159,6 +160,6 @@ int main()
   // 6: close device
   ftdi_usb_close(ftHandle);
   ftdi_free(ftHandle);
-  
+
   return 0;
 }

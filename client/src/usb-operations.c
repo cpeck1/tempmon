@@ -1,15 +1,13 @@
-#ifndef _USBOP
-#define _USBOP
+#include "usb-operations.h"
+#include "array.h"
 
-#include <ftdi.h>
 #include <libusb-1.0/libusb.h>
-#include "devtypes.h"
-#include "array.c"
+#include <stdio.h>
 
 uint16_t make_crc(uint8_t *byte_array, int end_position)
 {
   // make a cyclic redundancy check for the given byte array; this is per the
-  // rules found in the SEM710 specifications provided by Status Instruments; 
+  // rules found in the SEM710 specifications provided by Status Instruments;
   // the polynomial 0xA001 doesn't appear to conform to any international
   // crc standard.
   int i;
@@ -20,7 +18,7 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
 
   /*
     The CRC is based on the following components of this message:
-    
+
     Start
     Command
     Length
@@ -42,10 +40,10 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
   return crc;
 }
 
-int crc_pass(uint8_t *rx_data, int rx_pointer) 
+int crc_pass(uint8_t *rx_data, int rx_pointer)
 {
   // returns whether the received crc is the same as the calculated crc from
-  // the byte array passed by the USB device; if it is not, then the usb 
+  // the byte array passed by the USB device; if it is not, then the usb
   // transfer was faulty
   uint16_t calculated_crc = make_crc(rx_data, rx_pointer - 2);
   uint16_t rx_crc = (rx_data[rx_pointer] << 8) + (rx_data[rx_pointer - 1]);
@@ -56,10 +54,10 @@ int crc_pass(uint8_t *rx_data, int rx_pointer)
   return (calculated_crc == rx_crc);
 }
 
-int detach_device_kernel(int vendor_id, int product_id) 
+int detach_device_kernel(int vendor_id, int product_id)
 {
-  // if the device kernel with the given vendor id and product id is currently 
-  // active then detach it and return whether or not this action failed. This 
+  // if the device kernel with the given vendor id and product id is currently
+  // active then detach it and return whether or not this action failed. This
   // must be done using libusb, since ftd2xx does not have this capability.
 
   int detach_failed;
@@ -70,10 +68,10 @@ int detach_device_kernel(int vendor_id, int product_id)
 
   handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
   if (handle == NULL) {
-    printf("Error opening device: device missing.\n");    
+    printf("Error opening device: device missing.\n");
     return -1;
   }
-  
+
   if (libusb_kernel_driver_active(handle, 0)) {
     printf("Kernel driver already attached. Detaching...\n");
     detach_failed = libusb_detach_kernel_driver(handle, 0);
@@ -85,29 +83,29 @@ int detach_device_kernel(int vendor_id, int product_id)
   libusb_release_interface(handle, 0);
   libusb_close(handle);
   libusb_exit(context);
-  
+
   return 0;
 }
 
-int open_device(struct ftdi_context *ctx, int vendor_id, int product_id) 
+int open_device(struct ftdi_context *ctx, int vendor_id, int product_id)
 {
   // use FTD2XX to open the device; this open device function simply opens the
   // first device it finds with the given vendor and product id, and cannot
   // differentiate between multiple devices with the same vID and pID
   int err = 0;
-  
+
   err = ftdi_init(ctx);
   if (err) { return err; }
 
   err = ftdi_usb_open(ctx, vendor_id, product_id);
   if (err) { return err; }
-  
+
   // open successful
   return 0;
 }
 
 
-int prepare_device(struct ftdi_context *ctx) 
+int prepare_device(struct ftdi_context *ctx)
 {
   /* struct ftdi_bits_type btype = BITS_8; */
   /* struct ftdi_stop_bits_type sbits = STOP_BIT_1; */
@@ -155,7 +153,7 @@ int prepare_device(struct ftdi_context *ctx)
 }
 
 int generate_message(uint8_t COMMAND, uint8_t* byte_array,
-		     int byte_array_upper_index) 
+		     int byte_array_upper_index)
 {
   // Generate a message to send to the device, based on the given command and
   // byte array; returns the size of the message
@@ -203,8 +201,8 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
   return (i + 1);
 }
 
-int generate_block_message(uint8_t device_address, int command, 
-			   uint8_t byte_count, long block_address, 
+int generate_block_message(uint8_t device_address, int command,
+			   uint8_t byte_count, long block_address,
 			   uint8_t *byte_array, uint8_t read)
 {
   // generate a block message and return the length of said block message
@@ -222,7 +220,7 @@ int generate_block_message(uint8_t device_address, int command,
   // data enters in the byte_array
   output[0] = device_address;
   output[1] = command;
-  
+
   output[2] = byte_count;
   // start address Msb then lsb
   temp = block_address & 0xFF00;
@@ -236,7 +234,7 @@ int generate_block_message(uint8_t device_address, int command,
       output[i] = byte_array[x];
     }
   }
-  
+
   crc = make_crc(output, i);
   lbyte = (crc >> 8);
   rbyte = (crc) & 0xFF;
@@ -255,8 +253,8 @@ int generate_block_message(uint8_t device_address, int command,
 
 int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
 {
-  /* 
-     reads the process of the SEM710 device, which includes: 
+  /*
+     reads the process of the SEM710 device, which includes:
        -ADC value: analog-to-digital converter value
        -ELEC value: ?
        -PROCESS variable: ?
@@ -269,7 +267,7 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
   int i;
   write_array[0] = 0;
   uint8_t read_array[280];
-  
+
   int written;
   int received;
 
@@ -283,14 +281,14 @@ int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
     printf("Failed to generate message.\n");
     return -1;
   }
-  for (i = 0; (i < 40 && (read_array[1] != 34)); i++) { 
+  for (i = 0; (i < 40 && (read_array[1] != 34)); i++) {
     // run until positive response received, or 40 negative replies (10 seconds)
     written = ftdi_write_data(ctx, write_array, len);
     if (written < 0) {
       printf("Error: ftdi_write_data(%d)\n", written);
       return written;
     }
-   
+
     usleep(250000); // give the device some time to transmit process readings
 
     received = ftdi_read_data(ctx, read_array, 280);
@@ -338,14 +336,14 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
     write_array[i] = 0;
     read_array[i] = 0;
   }
-  
+
   len = generate_message(SEM_COMMANDS_cREAD_CONFIG, write_array, 0);
   if (len == -1) {
     printf("Failed to generate message.\n");
     return -1;
   }
 
-  for (i = 0; (i < 40 && (read_array[1] != 33)); i++) { 
+  for (i = 0; (i < 40 && (read_array[1] != 33)); i++) {
     // run until positive response received, or 40 negative replies (10 seconds)
     written = ftdi_write_data(ctx, write_array, len);
     if (written < 0) {
@@ -353,14 +351,14 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
     	     ftdi_get_error_string(ctx));
       return written;
     }
-   
+
     printf("Bytes written: %d\n", written);
 
     usleep(250000); // give the device some time to transmit process readings
 
     received = ftdi_read_data(ctx, read_array, 280);
     if (received < 0) {
-      printf("Error: ftdi_read_data %d (%s)\n", 
+      printf("Error: ftdi_read_data %d (%s)\n",
 	     received, ftdi_get_error_string(ctx));
       return received;
     }
@@ -368,13 +366,11 @@ int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
   }
 
   array_to_CONFIG_DATA(cal, read_array);
-  
+
   return 0;
 }
 
 int SEM710_auto_cal(struct ftdi_context *ctx)
 {
-  
+   return 0;
 }
-
-#endif

@@ -1,6 +1,6 @@
-#ifndef _ARRAY
-#define _ARRAY
+#include "array.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #define L_ENDIAN (get_endianness() == 0)
 #define B_ENDIAN (get_endianness() == 1)
@@ -65,12 +65,12 @@ uint16_t short_from_byte_array(uint8_t *byte_array, int start_index)
   return s1;
 }
 
-int string_from_byte_array(uint8_t *byte_array, char *string, 
+int string_from_byte_array(uint8_t *byte_array, char *string,
 			   int start_index, int end_index)
 {
-  /* 
+  /*
      transfer the bytes in byte_array from start_index to end_index (inclusive)
-     into string; returns the size of the string array (for lack of a better 
+     into string; returns the size of the string array (for lack of a better
      thing to return)
   */
   int i;
@@ -81,13 +81,13 @@ int string_from_byte_array(uint8_t *byte_array, char *string,
     string[j] = (char) byte_array[i];
     j++;
   }
-  
+
   return j;
 }
 
 int float_into_byte_array(uint8_t *byte_array, int index, float flt)
 {
-  /* 
+  /*
      insert flt into byte_array at index, returning the index of the next open
      space in the array
   */
@@ -107,5 +107,3 @@ int float_into_byte_array(uint8_t *byte_array, int index, float flt)
   }
   return retval;
 }
-
-#endif
