@@ -53,12 +53,9 @@ int main()
   SEM710_READINGS readings;
   CONFIG_DATA cal;
 
-  //file_parse_test();
-  //array_test();
-
-  /* Get device ids from file: */
   ftHandle = ftdi_new();
 
+  /* Get device ids from file: */
   err = get_device_ids(&product_id, &vendor_id);
   if (err) {
     printf("Error: bad or missing device file\n");
@@ -104,7 +101,7 @@ int main()
       break;
     case 1: /* read process */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
-      if (read_bytes < 0) {
+      if (read_bytes <= 0) {
 	printf("Read process failure.\n");
 	looping = 0;
       }
@@ -115,7 +112,7 @@ int main()
       break;
     case 2:  /* read config */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf);
-      if (read_bytes < 0) {
+      if (read_bytes <= 0) {
     	printf("Read calibration failure.\n");
     	looping = 0;
       }

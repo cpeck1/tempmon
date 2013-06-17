@@ -44,7 +44,6 @@ typedef enum {
 } SEM_COMMANDS;
 
 
-uint8_t get_confirmation_byte(SEM_COMMANDS c);
 
 typedef enum {
   WAITING_FOR_START,
@@ -79,12 +78,6 @@ typedef struct {
   float CJ_TEMP;
 } SEM710_READINGS;
 
-void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
-		  int array_len);
-
-void display_readings(SEM710_READINGS *readings);
-
-
 typedef struct {
   uint8_t tc_code;
   uint8_t up_scale;
@@ -110,10 +103,6 @@ typedef struct {
   char Serial_number[16];
   char comment[256];
 } CONFIG_DATA;
-
-void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
-
-void display_config(CONFIG_DATA *cal);
 
 typedef struct {
 uint8_t straight_from_programming;/* always 0, used on first power up */
@@ -145,6 +134,17 @@ typedef struct {
    short *config_output_int;
    char *tag_number;
 } CONFIG_BLOCK;
+
+uint8_t get_confirmation_byte(SEM_COMMANDS c);
+
+void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
+		  int array_len);
+
+void display_readings(SEM710_READINGS *readings);
+
+void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
+
+void display_config(CONFIG_DATA *cal);
 
 void CONFIG_BLOCK_init(CONFIG_BLOCK *config_block);
 

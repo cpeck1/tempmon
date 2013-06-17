@@ -50,8 +50,12 @@ int crc_pass(uint8_t *rx_data, int rx_pointer)
     the byte array passed by the USB device; if it is not, then the usb
     transfer was faulty
   */
-  uint16_t calculated_crc = make_crc(rx_data, rx_pointer - 2);
-  uint16_t rx_crc = (rx_data[rx_pointer] << 8) + (rx_data[rx_pointer - 1]);
+  uint16_t calculated_crc;
+  uint16_t rx_crc;
+  
+  calculated_crc = make_crc(rx_data, rx_pointer - 2);
+  rx_crc = (((uint16_t) rx_data[rx_pointer]) << 8) + 
+    ((uint16_t) rx_data[rx_pointer - 1]);
 
   printf("Calculated crc: %d\n", calculated_crc);
   printf("Received crc: %d\n", rx_crc);
@@ -191,6 +195,8 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
   /* length */
   i++;
   output[i] = byte_array_upper_index;
+
+  /* data */
   for (x = 0; x <= byte_array_upper_index; x++) {
     i++;
     output[i] = byte_array[x];
@@ -216,7 +222,7 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
     byte_array[x] = output[x];
   }
 
-  return (i + 1); /* returns size, not highest index */
+  return (i + 1); /* returns the size, NOT the highest index */
 }
 
 int generate_block_message(uint8_t device_address, int command,
@@ -290,13 +296,14 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
 
   outgoing_bytes[0] = 0;
   len = generate_message(command, outgoing_bytes, 0);
-  if (len == 0) {
+  if (len <= 0) {
     printf("Failed to generate message.\n");
     return -1;
   }
 
+  received = 0;
   for (i = 0; (i < 4 && (incoming_buff[1] != confirmation_byte)); i++) {
-    /*  until positive response received, or 4 negative replies (3 seconds) */
+    /*  until positive response received, or 4 no-replies (2.8 seconds) */
     written = ftdi_write_data(ctx, outgoing_bytes, len);
     if (written < 0) {
       printf("Error: ftdi_write_data(%d)\n", written);
@@ -311,7 +318,12 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
       return received;
     }
   }
-  printf("number of tries: %d\n", i);
+
+  printf("Received message: ");
+  for (i = 0; i < received; i++) {
+    printf("%d ", incoming_buff[i]);
+  }
+  printf("\n");
 
   if (!crc_pass(incoming_buff, received - 2)) {
     /*
@@ -321,130 +333,4 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
     printf("Warning: CRC invalid.\n");
   }
   return received;
-  }
-
-
-/* int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings) */
-/* { */
-/*   /\*  */
-/*      reads the process of the SEM710 device, which includes:  */
-/*        -ADC value: analog-to-digital converter value */
-/*        -ELEC value: ? */
-/*        -PROCESS variable: ? */
-/*        -MA_OUT: Amperage of the device */
-/*        -CJ_TEMP: Adjusted temperature of the device. */
-
-/*   *\/ */
-/*   uint8_t write_array[280]; */
-/*   int len = -1; */
-/*   int i; */
-/*   write_array[0] = 0; */
-/*   uint8_t read_array[280]; */
-
-/*   int written; */
-/*   int received; */
-
-/*   for (i = 0; i < 280; i++) { */
-/*     write_array[i] = 0; */
-/*     read_array[i] = 0; */
-/*   } */
-
-/*   len = generate_message(SEM_COMMANDS_cREAD_PROCESS, write_array, 0); */
-/*   if (len == -1) { */
-/*     printf("Failed to generate message.\n"); */
-/*     return -1; */
-/*   } */
-/*   for (i = 0; (i < 40 && (read_array[1] != 34)); i++) {  */
-/*     // run until positive response received, or 40 negative replies (10 seconds) */
-/*     written = ftdi_write_data(ctx, write_array, len); */
-/*     if (written < 0) { */
-/*       printf("Error: ftdi_write_data(%d)\n", written); */
-/*       return written; */
-/*     } */
-
-/*     usleep(250000); // give the device some time to transmit process readings */
-
-/*     received = ftdi_read_data(ctx, read_array, 280); */
-/*     if (received < 0) { */
-/*       printf("Error: ftdi_read_data(%d)\n", received); */
-/*       return received; */
-/*     } */
-/*   } */
-
-/*   printf("Rec:"); */
-/*   for (i = 0; i < received; i++) { */
-/*     printf("%u, ", read_array[i]); */
-/*   } */
-/*   printf("\n"); */
-
-/*   printf("CRC passes... "); */
-/*   if (crc_pass(read_array, received - 2)) { */
-/*     printf("Yes.\n"); */
-/*   } */
-/*   else { */
-/*     printf("No.\n"); */
-/*   } */
-
-/*   readings->ADC_VALUE = float_from_byte_array(read_array, 3); */
-/*   readings->ELEC_VALUE = float_from_byte_array(read_array, 7); */
-/*   readings->PROCESS_VARIABLE = float_from_byte_array(read_array, 11); */
-/*   readings->MA_OUT = float_from_byte_array(read_array, 15); */
-/*   readings->CJ_TEMP = float_from_byte_array(read_array, 19); */
-
-/*   return 0; */
-/* } */
-
-
-/* int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal) */
-/* { */
-/*   uint8_t write_array[280]; */
-/*   uint8_t read_array[280]; */
-
-/*   int i; */
-/*   int len = -1; */
-/*   int written; */
-/*   int received; */
-
-/*   for (i = 0; i < 280; i++) { */
-/*     write_array[i] = 0; */
-/*     read_array[i] = 0; */
-/*   } */
-
-/*   len = generate_message(SEM_COMMANDS_cREAD_CONFIG, write_array, 0); */
-/*   if (len == -1) { */
-/*     printf("Failed to generate message.\n"); */
-/*     return -1; */
-/*   } */
-
-/*   for (i = 0; (i < 40 && (read_array[1] != 33)); i++) {  */
-/*     // run until positive response received, or 40 negative replies (10 seconds) */
-/*     written = ftdi_write_data(ctx, write_array, len); */
-/*     if (written < 0) { */
-/*       printf("Error: ftdi_write_data %d (%s)\n", written, */
-/*     	     ftdi_get_error_string(ctx)); */
-/*       return written; */
-/*     } */
-
-/*     printf("Bytes written: %d\n", written); */
-
-/*     usleep(250000); // give the device some time to transmit process readings */
-
-/*     received = ftdi_read_data(ctx, read_array, 280); */
-/*     if (received < 0) { */
-/*       printf("Error: ftdi_read_data %d (%s)\n",  */
-/* 	     received, ftdi_get_error_string(ctx)); */
-/*       return received; */
-/*     } */
-/*     printf("Bytes received: %d\n", received); */
-/*   } */
-
-/*   array_to_CONFIG_DATA(cal, read_array); */
-
-/*   return 0; */
-/* } */
-
-/* int SEM710_auto_cal(struct ftdi_context *ctx) */
-/* { */
-
-/* } */
-
+}

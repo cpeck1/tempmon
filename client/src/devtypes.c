@@ -98,27 +98,27 @@ void display_readings(SEM710_READINGS *readings)
   printf("CJ_TEMP=%f\n", readings->CJ_TEMP);
 }
 
-void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len)
+void get_config(CONFIG_DATA *cal, uint8_t *byte_array, int array_len)
 {
   /* transfers the contents of the given byte array into the CONFIG_DATA */
   assert (array_len > 43);
 
-  cal->tc_code = input_array[3];
-  cal->up_scale = input_array[4];
-  cal->units = input_array[5];
-  cal->model_type = input_array[6];
-  cal->vout_range = input_array[7];
-  cal->action_A = input_array[8];
-  cal->action_B = input_array[9];
-  cal->spare = input_array[10];
-  cal->low_range = float_from_byte_array(input_array, 11);
-  cal->high_range = float_from_byte_array(input_array, 15);
-  cal->low_trim = float_from_byte_array(input_array, 19);
-  cal->high_trim = float_from_byte_array(input_array, 23);
-  cal->setpoint_A = float_from_byte_array(input_array, 27);
-  cal->hyst_A = float_from_byte_array(input_array, 31);
-  cal->setpoint_B = float_from_byte_array(input_array, 35);
-  cal->hyst_B = float_from_byte_array(input_array, 39);
+  cal->tc_code = byte_array[3];
+  cal->up_scale = byte_array[4];
+  cal->units = byte_array[5];
+  cal->model_type = byte_array[6];
+  cal->vout_range = byte_array[7];
+  cal->action_A = byte_array[8];
+  cal->action_B = byte_array[9];
+  cal->spare = byte_array[10];
+  cal->low_range = float_from_byte_array(byte_array, 11);
+  cal->high_range = float_from_byte_array(byte_array, 15);
+  cal->low_trim = float_from_byte_array(byte_array, 19);
+  cal->high_trim = float_from_byte_array(byte_array, 23);
+  cal->setpoint_A = float_from_byte_array(byte_array, 27);
+  cal->hyst_A = float_from_byte_array(byte_array, 31);
+  cal->setpoint_B = float_from_byte_array(byte_array, 35);
+  cal->hyst_B = float_from_byte_array(byte_array, 39);
 }
 
 void display_config(CONFIG_DATA *cal)
@@ -161,5 +161,8 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->config_input_byte);
   free(config_block->title);
   free(config_block->units);
+  free(config_block->config_output_floats);
+  free(config_block->config_output_int);
+  free(config_block->tag_number);
 }
 

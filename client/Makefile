@@ -34,7 +34,7 @@ MAKEDEPEND := cpp
 BUILD_DIR_FULL_PATH := $(CURDIR)/$(BUILD_DIR)
 VPATH := $(CURDIR) $(INCLUDE_PATH)
 
-CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -Wno-write-strings
+CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -pedantic -Wno-write-strings
 LDFLAGS += $(foreach path,$(LIB_PATH),-L$(path))
 
 ifeq ($(MAKECMDGOALS),test)
