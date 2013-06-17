@@ -44,14 +44,32 @@ int get_user_selection()
 
 int main()
 {
-  file_parse_test();
-  array_test();
-
-  // Get device ids from file:
   int product_id;
   int vendor_id;
 
   int err = 0;
+
+  int detach_failed;
+  int open_failed;
+  int prep_failed;
+  struct ftdi_context *ftHandle;
+
+  int selection;
+  int read_bytes;
+
+  SEM710_READINGS readings;
+  CONFIG_DATA cal;
+
+  uint8_t inc_buf[280];
+
+  int looping = 1;
+
+  file_parse_test();
+  array_test();
+
+  // Get device ids from file:
+  ftHandle = ftdi_new();
+
   err = get_device_ids(&product_id, &vendor_id);
   if (err) {
     printf("Error: bad or missing device file\n");
@@ -67,11 +85,7 @@ int main()
   ///////////////////////////
   // 2: Open SEM710 device //
   ///////////////////////////
-  int detach_failed;
-  int open_failed;
-  int prep_failed;
-  struct ftdi_context *ftHandle;
-  ftHandle = ftdi_new();
+
   
   detach_failed = detach_device_kernel(vendor_id, product_id);
   if (detach_failed) { return 1; }
@@ -92,19 +106,7 @@ int main()
   //////////////////////////////////////////
   // 3: await instructions (skip for now) //
   //////////////////////////////////////////
-  int selection;
-  int read_failed;
-  /* int write_failed; */
-  // FT_STATUS ftStatus;
-  SEM710_READINGS readings;
-  /* CONFIG_BLOCK block; */
-  /* CONFIG_BLOCK_init(&block); */
-  CONFIG_DATA cal;
-  CONFIG_DATA_init(&cal);
-  /* UNIVERSAL_CALIBRATION unical; */
 
-  // prompt user for selection
-  int looping = 1;
   while (looping) {
     show_user_options();
     selection = get_user_selection();
@@ -114,27 +116,25 @@ int main()
     case 0:
       looping = 0;
       break;
-    case 1: // connect to server
-      printf("Unimplemented\n");
-      break;
-    case 2: // read process
-      read_failed = SEM710_read_process(ftHandle, &readings);
-      if (read_failed) {
+    case 1: // read process
+      read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
+      if (read_bytes < 0) {
 	printf("Read process failure.\n");
 	looping = 0;
       }
       else {
-	SEM710_display_readings(&readings);
+        get_readings(&readings, inc_buf, read_bytes);
+	display_readings(&readings);
       }
       break;
-    case 3: // read config
-      read_failed = SEM710_read_config(ftHandle, &cal);
-      if (read_failed) {
+    case 2: // read config
+      read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf);
+      if (read_bytes < 0) {
     	printf("Read calibration failure.\n");
     	looping = 0;
       }
       else {
-        display_CONFIG_DATA(&cal);
+        get_config(&cal, inc_buf, read_bytes);
       }
       break;
     default:
@@ -146,7 +146,6 @@ int main()
   //////////////////////////////
   // 4: read data from SEM710 //
   //////////////////////////////
-
 
   // 4.5: transmit data from SEM710
 

@@ -252,129 +252,182 @@ int generate_block_message(uint8_t device_address, int command,
   return i + 1;
 }
 
-
-int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings)
+int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
 {
   /* 
-     reads the process of the SEM710 device, which includes: 
-       -ADC value: analog-to-digital converter value
-       -ELEC value: ?
-       -PROCESS variable: ?
-       -MA_OUT: Amperage of the device
-       -CJ_TEMP: Adjusted temperature of the device.
-
+     sends a read command to the device, and returns the length of the received
+     byte array
   */
-  uint8_t write_array[280];
+  uint8_t outgoing_bytes[280];
+
   int len = -1;
-  int i;
-  write_array[0] = 0;
-  uint8_t read_array[280];
-  
+  int i;  
+
   int written;
   int received;
+  int confirmation_byte;
 
   for (i = 0; i < 280; i++) {
-    write_array[i] = 0;
-    read_array[i] = 0;
+    incoming_buff[i] = 0;
   }
+  confirmation_byte = get_confirmation_byte(command);
 
-  len = generate_message(SEM_COMMANDS_cREAD_PROCESS, write_array, 0);
+  outgoing_bytes[0] = 0;
+  len = generate_message(command, outgoing_bytes, 0);
   if (len == -1) {
     printf("Failed to generate message.\n");
     return -1;
   }
-  for (i = 0; (i < 40 && (read_array[1] != 34)); i++) { 
-    // run until positive response received, or 40 negative replies (10 seconds)
-    written = ftdi_write_data(ctx, write_array, len);
+
+  for (i = 0; (i < 40 && (incoming_buff[1] != confirmation_byte)); i++) { 
+    /*  until positive response received, or 40 negative replies (10 seconds) */
+    written = ftdi_write_data(ctx, outgoing_bytes, len);
     if (written < 0) {
       printf("Error: ftdi_write_data(%d)\n", written);
       return written;
     }
-   
-    usleep(250000); // give the device some time to transmit process readings
 
-    received = ftdi_read_data(ctx, read_array, 280);
+    usleep(250000); /* give the device some time to transmit process readings */
+
+    received = ftdi_read_data(ctx, incoming_buff, 280);
     if (received < 0) {
       printf("Error: ftdi_read_data(%d)\n", received);
       return received;
     }
   }
-
-  printf("Rec:");
-  for (i = 0; i < received; i++) {
-    printf("%u, ", read_array[i]);
+  if (!crc_pass(incoming_buff, received - 2)) {
+    /*
+      might add more security later, but the readings transmitted always seem
+      correct despite the CRC invalidation... 
+    */
+    printf("Warning: CRC invalid.\n");
   }
-  printf("\n");
-
-  printf("CRC passes... ");
-  if (crc_pass(read_array, received - 2)) {
-    printf("Yes.\n");
-  }
-  else {
-    printf("No.\n");
-  }
-
-  readings->ADC_VALUE = float_from_byte_array(read_array, 3);
-  readings->ELEC_VALUE = float_from_byte_array(read_array, 7);
-  readings->PROCESS_VARIABLE = float_from_byte_array(read_array, 11);
-  readings->MA_OUT = float_from_byte_array(read_array, 15);
-  readings->CJ_TEMP = float_from_byte_array(read_array, 19);
-
-  return 0;
+  return received;
 }
 
 
-int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal)
-{
-  uint8_t write_array[280];
-  uint8_t read_array[280];
+/* int SEM710_read_process(struct ftdi_context *ctx, SEM710_READINGS *readings) */
+/* { */
+/*   /\*  */
+/*      reads the process of the SEM710 device, which includes:  */
+/*        -ADC value: analog-to-digital converter value */
+/*        -ELEC value: ? */
+/*        -PROCESS variable: ? */
+/*        -MA_OUT: Amperage of the device */
+/*        -CJ_TEMP: Adjusted temperature of the device. */
 
-  int i;
-  int len = -1;
-  int written;
-  int received;
-
-  for (i = 0; i < 280; i++) {
-    write_array[i] = 0;
-    read_array[i] = 0;
-  }
+/*   *\/ */
+/*   uint8_t write_array[280]; */
+/*   int len = -1; */
+/*   int i; */
+/*   write_array[0] = 0; */
+/*   uint8_t read_array[280]; */
   
-  len = generate_message(SEM_COMMANDS_cREAD_CONFIG, write_array, 0);
-  if (len == -1) {
-    printf("Failed to generate message.\n");
-    return -1;
-  }
+/*   int written; */
+/*   int received; */
 
-  for (i = 0; (i < 40 && (read_array[1] != 33)); i++) { 
-    // run until positive response received, or 40 negative replies (10 seconds)
-    written = ftdi_write_data(ctx, write_array, len);
-    if (written < 0) {
-      printf("Error: ftdi_write_data %d (%s)\n", written,
-    	     ftdi_get_error_string(ctx));
-      return written;
-    }
+/*   for (i = 0; i < 280; i++) { */
+/*     write_array[i] = 0; */
+/*     read_array[i] = 0; */
+/*   } */
+
+/*   len = generate_message(SEM_COMMANDS_cREAD_PROCESS, write_array, 0); */
+/*   if (len == -1) { */
+/*     printf("Failed to generate message.\n"); */
+/*     return -1; */
+/*   } */
+/*   for (i = 0; (i < 40 && (read_array[1] != 34)); i++) {  */
+/*     // run until positive response received, or 40 negative replies (10 seconds) */
+/*     written = ftdi_write_data(ctx, write_array, len); */
+/*     if (written < 0) { */
+/*       printf("Error: ftdi_write_data(%d)\n", written); */
+/*       return written; */
+/*     } */
    
-    printf("Bytes written: %d\n", written);
+/*     usleep(250000); // give the device some time to transmit process readings */
 
-    usleep(250000); // give the device some time to transmit process readings
+/*     received = ftdi_read_data(ctx, read_array, 280); */
+/*     if (received < 0) { */
+/*       printf("Error: ftdi_read_data(%d)\n", received); */
+/*       return received; */
+/*     } */
+/*   } */
 
-    received = ftdi_read_data(ctx, read_array, 280);
-    if (received < 0) {
-      printf("Error: ftdi_read_data %d (%s)\n", 
-	     received, ftdi_get_error_string(ctx));
-      return received;
-    }
-    printf("Bytes received: %d\n", received);
-  }
+/*   printf("Rec:"); */
+/*   for (i = 0; i < received; i++) { */
+/*     printf("%u, ", read_array[i]); */
+/*   } */
+/*   printf("\n"); */
 
-  array_to_CONFIG_DATA(cal, read_array);
+/*   printf("CRC passes... "); */
+/*   if (crc_pass(read_array, received - 2)) { */
+/*     printf("Yes.\n"); */
+/*   } */
+/*   else { */
+/*     printf("No.\n"); */
+/*   } */
+
+/*   readings->ADC_VALUE = float_from_byte_array(read_array, 3); */
+/*   readings->ELEC_VALUE = float_from_byte_array(read_array, 7); */
+/*   readings->PROCESS_VARIABLE = float_from_byte_array(read_array, 11); */
+/*   readings->MA_OUT = float_from_byte_array(read_array, 15); */
+/*   readings->CJ_TEMP = float_from_byte_array(read_array, 19); */
+
+/*   return 0; */
+/* } */
+
+
+/* int SEM710_read_config(struct ftdi_context *ctx, CONFIG_DATA *cal) */
+/* { */
+/*   uint8_t write_array[280]; */
+/*   uint8_t read_array[280]; */
+
+/*   int i; */
+/*   int len = -1; */
+/*   int written; */
+/*   int received; */
+
+/*   for (i = 0; i < 280; i++) { */
+/*     write_array[i] = 0; */
+/*     read_array[i] = 0; */
+/*   } */
   
-  return 0;
-}
+/*   len = generate_message(SEM_COMMANDS_cREAD_CONFIG, write_array, 0); */
+/*   if (len == -1) { */
+/*     printf("Failed to generate message.\n"); */
+/*     return -1; */
+/*   } */
 
-int SEM710_auto_cal(struct ftdi_context *ctx)
-{
+/*   for (i = 0; (i < 40 && (read_array[1] != 33)); i++) {  */
+/*     // run until positive response received, or 40 negative replies (10 seconds) */
+/*     written = ftdi_write_data(ctx, write_array, len); */
+/*     if (written < 0) { */
+/*       printf("Error: ftdi_write_data %d (%s)\n", written, */
+/*     	     ftdi_get_error_string(ctx)); */
+/*       return written; */
+/*     } */
+   
+/*     printf("Bytes written: %d\n", written); */
+
+/*     usleep(250000); // give the device some time to transmit process readings */
+
+/*     received = ftdi_read_data(ctx, read_array, 280); */
+/*     if (received < 0) { */
+/*       printf("Error: ftdi_read_data %d (%s)\n",  */
+/* 	     received, ftdi_get_error_string(ctx)); */
+/*       return received; */
+/*     } */
+/*     printf("Bytes received: %d\n", received); */
+/*   } */
+
+/*   array_to_CONFIG_DATA(cal, read_array); */
   
-}
+/*   return 0; */
+/* } */
+
+/* int SEM710_auto_cal(struct ftdi_context *ctx) */
+/* { */
+  
+/* } */
 
 #endif
