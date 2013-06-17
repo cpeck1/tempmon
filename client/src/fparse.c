@@ -7,9 +7,10 @@
 #define ID2 "DEVICE_ID_PRODUCT"
 #define ID3 "DEVICE_ID_SERIAL"
 
-/* get index of first occurrence of chr in string; not present returns -1 */
+
 int get_char_index(char *string, char chr)
 {
+  /* get index of first occurrence of chr in string; not present returns -1 */
   int index;
 
   index = 0;
@@ -22,12 +23,12 @@ int get_char_index(char *string, char chr)
   return -1; /* not found */
 }
 
-/* 
-   get the ID equal to the string phrase in the given line
-   returns 1 if id found, and 0 if file is malformed 
-*/
 int get_id_value(char *line, int *id_val) 
 {
+  /* 
+     get the ID equal to the string phrase in the given line
+     returns 1 if id found, and 0 if file is malformed 
+  */
   int eq_index;
   int eol_index;
   int diff;

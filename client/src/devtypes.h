@@ -41,7 +41,8 @@ enum SEM_COMMANDS {
 };
 
 uint8_t get_confirmation_byte(enum SEM_COMMANDS c) {
-  /* Returns: the expected first byte after start byte in incoming message from
+  /* 
+     Returns: the expected first byte after start byte in incoming message from
      device for the given command c.
      Ugly, ugly function... I'll leave the unused commands at 0 in case someone
      down the line wanted to use them, but with the SEM710 you'll likely only
@@ -134,7 +135,7 @@ typedef enum {
   GET_CRC_LOW,
   GET_CRC_HIGH,
   ENGAGED,
-  MESSAGE_NOT_VALID,
+  MESSAGE_NOT_VALID
 } COMMS_RX_STATE;
 
 typedef struct {
@@ -195,7 +196,7 @@ typedef struct {
 
 void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len)
 {
-  // transfers the contents of the given byte array into the CONFIG_DATA
+  /* transfers the contents of the given byte array into the CONFIG_DATA */
   assert (array_len > 43);
 
   cal->tc_code = input_array[3];
@@ -216,7 +217,7 @@ void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len)
   cal->hyst_B = float_from_byte_array(input_array, 39);
 }
 
-void display_config_data(CONFIG_DATA *cal)
+void display_config(CONFIG_DATA *cal)
 {
   printf("tc_code = %d\n", cal->tc_code);
   printf("up_scale = %d\n", cal->up_scale);
@@ -237,7 +238,7 @@ void display_config_data(CONFIG_DATA *cal)
 }
 
 typedef struct {
-  uint8_t straight_from_programming; // will always be 0, used on first power up
+  uint8_t straight_from_programming;/* always 0, used on first power up */
   uint8_t dummy;
   float lo_mv;
   float hi_mv;
@@ -253,12 +254,6 @@ typedef struct {
   float hi_cal_slide_wire;
   float hi_voltage_output;
 } UNIVERSAL_CALIBRATION;
-
-/* void UNIVERSAL_CALIBRATION_init(UNIVERSAL_CALIBRATION *cal) */
-/* { */
-/*   // set the unical's vars to their default value */
-  
-/* } */
 
 
 typedef struct {
@@ -292,7 +287,5 @@ void CONFIG_BLOCK_destroy(CONFIG_BLOCK *config_block)
   free(config_block->title);
   free(config_block->units);
 }
-
-
 
 #endif

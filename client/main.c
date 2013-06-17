@@ -1,11 +1,7 @@
-#define _GNU2_SOURCE
+#ifndef MAIN_FN
+#define MAIN_FN
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <math.h>
-#include <time.h>
-#include <ftdi.h>
 
 #include "src/fparse.c"
 #include "src/devtypes.h"
@@ -21,9 +17,8 @@ void show_user_options()
 {
   printf("\nPlease enter number corresponding to selection.\n");
   printf("0: Exit\n");
-  printf("1: Connect to host\n");
-  printf("2: Get temperature reading\n");
-  printf("3: Read device config\n");
+  printf("1: Get temperature reading\n");
+  printf("2: Read device config\n");
 }
 
 int get_user_selection()
@@ -39,6 +34,7 @@ int get_user_selection()
 	  return number;
 	}
     }
+  return 0;
 }
 
 
@@ -47,27 +43,23 @@ int main()
   int product_id;
   int vendor_id;
 
-  int err = 0;
+  int err;
+  int looping;
 
-  int detach_failed;
-  int open_failed;
-  int prep_failed;
   struct ftdi_context *ftHandle;
 
   int selection;
+
   int read_bytes;
+  uint8_t inc_buf[280];
 
   SEM710_READINGS readings;
   CONFIG_DATA cal;
 
-  uint8_t inc_buf[280];
-
-  int looping = 1;
-
   file_parse_test();
   array_test();
 
-  // Get device ids from file:
+  /* Get device ids from file: */
   ftHandle = ftdi_new();
 
   err = get_device_ids(&product_id, &vendor_id);
@@ -76,37 +68,34 @@ int main()
     return 1;
   }
 
-  //////////////////////////
-  // 1: Connect to server //
-  //////////////////////////
+  /************************/
+  /* 1: Connect to server */
+  /************************/
 
-  // unimplemented stub //
- 
-  ///////////////////////////
-  // 2: Open SEM710 device //
-  ///////////////////////////
 
+  /*************************/
+  /* 2: Open SEM710 device */
+  /*************************/
+
+  err = detach_device_kernel(vendor_id, product_id);
+  if (err) { return 1; }
   
-  detach_failed = detach_device_kernel(vendor_id, product_id);
-  if (detach_failed) { return 1; }
-  
-  open_failed = open_device(ftHandle, vendor_id, product_id);
-  if (open_failed) { return 1; }
+  err = open_device(ftHandle, vendor_id, product_id);
+  if (err) { return 1; }
 
-  prep_failed = prepare_device(ftHandle);
-  if (prep_failed) { return 1; }
+  err = prepare_device(ftHandle);
+  if (err) { return 1; }
 
-  // 2.5: report open status
-  
-  ///////////////////////////////////////////
-  // Communication to server unimplemented //
-  ///////////////////////////////////////////
+  /*****************************************/
+  /* Communication to server unimplemented */
+  /*****************************************/
   printf("Device prepared.\n");
 
-  //////////////////////////////////////////
-  // 3: await instructions (skip for now) //
-  //////////////////////////////////////////
+  /****************************************/
+  /* 3: await instructions (skip for now) */
+  /****************************************/
 
+  looping = 1;
   while (looping) {
     show_user_options();
     selection = get_user_selection();
@@ -116,7 +105,7 @@ int main()
     case 0:
       looping = 0;
       break;
-    case 1: // read process
+    case 1: /* read process */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
       if (read_bytes < 0) {
 	printf("Read process failure.\n");
@@ -127,7 +116,7 @@ int main()
 	display_readings(&readings);
       }
       break;
-    case 2: // read config
+    case 2:  /* read config */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf);
       if (read_bytes < 0) {
     	printf("Read calibration failure.\n");
@@ -135,6 +124,7 @@ int main()
       }
       else {
         get_config(&cal, inc_buf, read_bytes);
+	display_config(&cal);
       }
       break;
     default:
@@ -143,21 +133,23 @@ int main()
     }
     usleep(500000);
   }
-  //////////////////////////////
-  // 4: read data from SEM710 //
-  //////////////////////////////
+  /****************************/
+  /* 4: read data from SEM710 */
+  /****************************/
 
-  // 4.5: transmit data from SEM710
+  /* 4.5: transmit data from SEM710 */
 
-  //////////////////////////////////////////
-  // Communication to server unimplemented//
-  //////////////////////////////////////////
+  /****************************************/
+  /* Communication to server unimplemented*/
+  /****************************************/
 
-  // 5: purge buffer; await further instructions
+  /* 5: purge buffer; await further instructions */
 
-  // 6: close device
+  /* 6: close device */
   ftdi_usb_close(ftHandle);
   ftdi_free(ftHandle);
   
   return 0;
 }
+
+#endif

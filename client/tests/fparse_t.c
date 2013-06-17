@@ -122,7 +122,7 @@ int file_parse_test(void)
 
   test = "This_val=1\n";
   found = get_id_value(test, &val);
-  if ((found != 0) && (val == 1)) {
+  if ((found == 1) && (val == 1)) {
     tests_passed++;
   }
   else {
