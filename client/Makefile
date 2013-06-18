@@ -6,36 +6,27 @@ TEST_APP := $(APP)_test
 MTYPE := $(shell uname -m)
 LANG := en_US                # for gcc error messages
 BUILD_DIR := obj
-BUILD_DIR_FULL_PATH := $(CURDIR)/$(BUILD_DIR)
-INCLUDE_PATH := . src test
 
 # filenames only - no paths required
 COMMON_SRCS := \
-	array.c \
-	devtypes.c \
-	fparse.c \
-	usb-operations.c
+	src/array.c \
+	src/devtypes.c \
+	src/fparse.c \
+	src/usb-operations.c
 
 SRCS := \
 	$(COMMON_SRCS) \
-	main.c \
+	src/main.c
 
 TEST_SRCS := \
 	$(COMMON_SRCS) \
-	array_test.c \
-	fparse_test.c \
-	test_funcs.c \
-	test_main.c
+	test/array_test.c \
+	test/fparse_test.c \
+	test/test_funcs.c \
+	test/test_main.c
 
 LIBS := -lm -lftdi -lusb-1.0
 LIB_PATH := .
-
-MAKEDEPEND := cpp
-BUILD_DIR_FULL_PATH := $(CURDIR)/$(BUILD_DIR)
-VPATH := $(CURDIR) $(INCLUDE_PATH)
-
-CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -Wno-write-strings
-LDFLAGS += $(foreach path,$(LIB_PATH),-L$(path))
 
 ifeq ($(MAKECMDGOALS),test)
   SRCS := $(TEST_SRCS)
@@ -47,8 +38,19 @@ else
 endif
 
 FILES = $(notdir $(SRCS))
+PATHS = $(sort $(dir $(SRCS) ) )
 OBJS := $(addprefix $(BUILD_DIR)/, $(FILES:.c=.o))
 DEPS := $(OBJ:.o=.d)
+
+INCLUDE_PATH := $(foreach inc,$(PATHS),$(inc))
+VPATH := $(CURDIR) $(INCLUDE_PATH)
+
+CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -Wno-write-strings
+LDFLAGS += $(foreach path,$(LIB_PATH),-L$(path))
+
+ifndef VERBOSE
+  SILENT := @
+endif
 
 .PHONY : test clean
 
@@ -57,10 +59,12 @@ all: $(APP)
 test: $(TEST_APP)
 
 $(APP) : $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+	@echo "linking $@"
+	$(SILENT)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 $(TEST_APP): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+	@echo "linking $@"
+	$(SILENT)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -rf $(BUILD_DIR)/*.[odP] $(APP) $(TEST_APP)
@@ -69,8 +73,9 @@ clean:
 # This rule also creates the dependency files
 #
 $(BUILD_DIR)/%.o : %.c
-	$(CC) $(CFLAGS) -MD -o $@ $<
-	@cp $(BUILD_DIR)/$*.d $(BUILD_DIR)/$*.P; \
+	@echo "compiling $<..."
+	$(SILENT)$(CC) $(CFLAGS) -MD -o $@ $<
+	$(SILENT)cp $(BUILD_DIR)/$*.d $(BUILD_DIR)/$*.P; \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 		-e '/^$$/ d' -e 's/$$/ :/' < $(BUILD_DIR)/$*.d >> $(BUILD_DIR)/$*.P; \
 	rm -f $(BUILD_DIR)/$*.d
