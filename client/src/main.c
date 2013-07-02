@@ -53,6 +53,14 @@ int main()
   SEM710_READINGS readings;
   CONFIG_DATA cal;
 
+  CURL *curl;
+  CURLcode res;
+
+  if (!curl) {
+    printf("Failed to initialize curl. Exiting.");
+    return 1;
+  }
+
   ftHandle = ftdi_new();
 
   /* Get device ids from file: */
@@ -80,10 +88,12 @@ int main()
   err = prepare_device(ftHandle);
   if (err) { return 1; }
 
-  /*****************************************/
-  /* Communication to server unimplemented */
-  /*****************************************/
   printf("Device prepared.\n");
+  /*****************************************/
+  /* Communication to server */
+  /*****************************************/
+  
+  curl_easy_setup(curl, CURLOPT_URL, "http://cbsr.com");
 
   /****************************************/
   /* 3: await instructions (skip for now) */

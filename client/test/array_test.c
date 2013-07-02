@@ -10,52 +10,20 @@
 
 #include <gtest/gtest.h>
 
-TEST(array,float_from_byte) {
+TEST(array, float_from_byte_0) 
+{
   uint8_t flt_bytes[4];
 
   for (int i = 0; i < 4; i++) { flt_bytes[i] = 0; }
   float flt = float_from_byte_array(flt_bytes, 0);
 
-  ASSERT_FLOAT_EQ(flt, (float) 0.00000);
+  ASSERT_FLOAT_EQ(flt, 0.00000);
 }
 
-/*
-TEST(array,tests)
+TEST(array, float_from_byte_1) 
 {
-  char xbf[150];
-
-  int i;
-
-  int test_number;
-  int tests_passed;
-
-  char *test_desc;
-  char *got = "";
-
   uint8_t flt_bytes[4];
   float flt;
-
-  uint8_t shrt_bytes[2];
-  short shrt;
-
-  uint8_t flt_bytes_exp[4];
-
-  test_desc = xbf;
-  got = xbf;
-
-  tests_passed = 0;
-  test_number = 0;
-
-  // **************************************************
-  test_desc = "Testing float_from_byte_array(case 0)";
-  // **************************************************
-  test_number++;
-
-
-  // **************************************************
-  test_desc = "Testing float_from_byte_array(case 1)";
-  // **************************************************
-  test_number++;
 
   flt_bytes[0] = 0x00;
   flt_bytes[1] = 0x00;
@@ -63,147 +31,114 @@ TEST(array,tests)
   flt_bytes[3] = 0x3F;
 
   flt = float_from_byte_array(flt_bytes, 0);
-  if (floats_nearly_equal(flt, (float) 1)) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%f", flt);
-    report_error(test_number, test_desc, "1.00000", got);
-  }
+  
+  ASSERT_FLOAT_EQ(flt, 1.00000);
+}
 
-
-  // ****************************************************
-  test_desc = "Testing float_from_byte_array(case inf)";
-// ****************************************************
-  test_number++;
-
+TEST(array, float_from_byte_2) 
+{
+  uint8_t flt_bytes[4];
+  float flt;
+  
   flt_bytes[0] = 0x00;
-  flt_bytes[1] = 0x05;
-  flt_bytes[2] = 0xC3;
-  flt_bytes[3] = 0x47;
+  flt_bytes[1] = 0x00;
+  flt_bytes[2] = 0x7A;
+  flt_bytes[3] = 0x44;
 
   flt = float_from_byte_array(flt_bytes, 0);
-  if (floats_nearly_equal(flt, (float) 100000)) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%f", flt);
-    report_error(test_number, test_desc, "100000", got);
-  }
 
-  // **************************************************
-  test_desc = "Testing short_from_byte_array(case 0)";
-  // **************************************************
-  test_number++;
+  ASSERT_FLOAT_EQ(flt, (float) 1000);
+}
+
+TEST(array, short_from_byte_0) 
+{
+  uint8_t shrt_bytes[2];
+  short shrt;
 
   shrt_bytes[0] = 0; shrt_bytes[1] = 0;
 
   shrt = short_from_byte_array(shrt_bytes, 0);
-  if (shrt == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", shrt);
-    report_error(test_number, test_desc, "0", got);
-  }
+  
+  ASSERT_EQ(shrt, 0);
+}
 
-  // **************************************************
-  test_desc = "Testing short_from_byte_array(case 1)";
-  // **************************************************
-  test_number++;
+TEST(array, short_from_byte_1) 
+{
+  uint8_t shrt_bytes[2];
+  short shrt;
 
-  shrt_bytes[0] = 0x01; shrt_bytes[1] = 0x00;
+  shrt_bytes[0] = 1; shrt_bytes[1] = 0;
 
   shrt = short_from_byte_array(shrt_bytes, 0);
-  if (shrt == 1) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", shrt);
-    report_error(test_number, test_desc, "1", got);
-  }
+  
+  ASSERT_EQ(shrt, 1);
+}
 
-  // ****************************************************
-  test_desc = "Testing short_from_byte_array(case inf)";
-  // ****************************************************
-  test_number++;
+TEST(array, short_from_byte_2) 
+{
+  uint8_t shrt_bytes[2];
+  short shrt;
 
   shrt_bytes[0] = 0xFF; shrt_bytes[1] = 0x7F;
 
   shrt = short_from_byte_array(shrt_bytes, 0);
-  if (shrt == 0x7FFF) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", shrt);
-    report_error(test_number, test_desc, "32767", got);
-  }
 
+  ASSERT_EQ(shrt, 32767);
+}
 
-  // **************************************************
-  test_desc = "Testing float_into_byte_array(case 0)";
-  // **************************************************
-  test_number++;
-
-  flt = (float) 0;
-
-  float_into_byte_array(flt_bytes, 0, flt);
+TEST(array, float_into_byte_array_0) 
+{
+  float flt;
+  uint8_t flt_bytes[4];
+  uint8_t flt_bytes_exp[4];
+  int i;
+  
+  flt = 0;
   flt_bytes_exp[0] = 0; flt_bytes_exp[1] = 0;
   flt_bytes_exp[2] = 0; flt_bytes_exp[3] = 0;
 
-  if (bytes_equal(flt_bytes, 0, flt_bytes_exp, 0, 4)) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "{%d, %d, %d, %d}", flt_bytes[0], flt_bytes[1],
-	                             flt_bytes[2], flt_bytes[3]);
-    report_error(test_number, test_desc, "{0, 0, 0, 0}", got);
-  }
-
-
-  // **************************************************
-  test_desc = "Testing float_into_byte_array(case 1)";
-  // **************************************************
-  test_number++;
-
-  flt = (float) 1;
-
   float_into_byte_array(flt_bytes, 0, flt);
-  flt_bytes_exp[0] = 0x00; flt_bytes_exp[1] = 0x00;
+
+  for (i = 0; i < 4; i++) {
+    ASSERT_EQ(flt_bytes[i], flt_bytes_exp[i]);
+  }
+}
+
+TEST(array, float_into_byte_array_1) 
+{
+  float flt;
+  uint8_t flt_bytes[4];
+  uint8_t flt_bytes_exp[4];
+  int i;
+
+  flt = 1.00000;
+  flt_bytes_exp[0] = 0; flt_bytes_exp[1] = 0;
   flt_bytes_exp[2] = 0x80; flt_bytes_exp[3] = 0x3F;
 
-  if (bytes_equal(flt_bytes, 0, flt_bytes_exp, 0, 4)) {
-    tests_passed++;
-  }
-  else {
-     sprintf(got, "{%d, %d, %d, %d}", flt_bytes[0], flt_bytes[1],
-	                              flt_bytes[2], flt_bytes[3]);
-     report_error(test_number, test_desc, "{0, 0, 128, 63}", got);
-  }
-
-
-  // ****************************************************
-  test_desc = "Testing float_into_byte_array(case inf)";
-  // ****************************************************
-  test_number++;
-
-  flt = (float) 100000;
-
   float_into_byte_array(flt_bytes, 0, flt);
+
+  for (i = 0; i < 4; i++) {
+    ASSERT_EQ(flt_bytes[i], flt_bytes_exp[i]);
+  }
+}
+
+TEST(array, float_into_byte_array_2) 
+{
+  float flt;
+  uint8_t flt_bytes[4];
+  uint8_t flt_bytes_exp[4];
+  int i;
+  
+  flt = (float) 100000;
   flt_bytes_exp[0] = 0; flt_bytes_exp[1] = 80;
   flt_bytes_exp[2] = 195; flt_bytes_exp[3] = 71;
 
-  if (bytes_equal(flt_bytes, 0, flt_bytes_exp, 0, 4)) {
-    tests_passed++;
-  }
-  else {
-     sprintf(got, "{%d, %d, %d, %d}", flt_bytes[0], flt_bytes[1],
-	                              flt_bytes[2], flt_bytes[3]);
-     report_error(test_number, test_desc, "{0, 80, 195, 71}", got);
-  }
+  float_into_byte_array(flt_bytes, 0, flt);
 
-  return 0;
+  for (i = 0; i < 4; i++) {
+    ASSERT_EQ(flt_bytes[i], flt_bytes_exp[i]);
+  }
 }
 
-*/
+
 

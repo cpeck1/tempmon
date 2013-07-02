@@ -2,202 +2,162 @@
 
 #include <stdio.h>
 
+#include <math.h>
+#include <stdint.h>
+
+#include <gtest/gtest.h>
+
 #define TEST_FILE "/home/cpeck1/workspace/tempmon/tempmon/client/tests/testfile.ini"
 
-/*
-
-int file_parse_test(void)
+TEST(fparse, get_char_index_0)
 {
-  char xbf[150];
-
-  int test_number;
-  int tests_passed;
-
-  char *test_desc;
-  char *got = "";
-
   char *test;
   int index;
-  int found;
-  int val;
-  FILE *f;
-
-  test_desc = xbf; // magic
-  got = xbf;
-  test = xbf;
-
-  test_number = 0;
-  tests_passed = 0;
-
-  // *********************
-  test_desc = "Testing get_char_index(case 0)";
-  // *********************
-  test_number++;
-
+  
   test = "a";
   index = get_char_index(test, 'b');
-  if (index == -1) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "-1", got);
-  }
 
-  test_number++;
-  test = "b";
-  index = get_char_index(test, 'b');
-  if (index == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "0", got);
-  }
-
-  // *********************
-  test_desc = "Testing get_char_index(case 1)";
-  // *********************
-  test = "abcdefghijklmnopqrstuvwxyz";
-
-  test_number++;
-  index = get_char_index(test, 'z');
-  if (index == 25) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "25", got);
-  }
-
-  test_number++;
-  index = get_char_index(test, 'a');
-  if (index == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "0", got);
-  }
-
-  test_number++;
-  index = get_char_index(test, 'n');
-  if (index == 13) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "13", got);
-  }
-
-  // *********************
-  test_desc = "Testing get_id_value(case 0)";
-  // *********************
-  test_number++;
-
-  test = "This_val=booga";
-  found = get_id_value(test, &val);
-  if (found == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "0", got);
-  }
-
-  test_number++;
-  test = "";
-  found = get_id_value(test, &val);
-  if (found == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", index);
-    report_error(test_number, test_desc, "0", got);
-  }
-
-  // *********************
-  test_desc = "Testing get_id_value(case 1)";
-  // *********************
-  test_number++;
-
-  test = "This_val=1\n";
-  found = get_id_value(test, &val);
-  if ((found == 1) && (val == 1)) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", val);
-    report_error(test_number, test_desc, "1", got);
-  }
-
-  test_number++;
-
-  test = "This_val=35623\n";
-  found = get_id_value(test, &val);
-  if ((found != 0) && (val == 35623)) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", val);
-    report_error(test_number, test_desc, "35623", got);
-  }
-
-
-  // *********************
-  test_desc = "Testing get_specified_id(case 0)";
-  // *********************
-  f = fopen(TEST_FILE, "r");
-
-  test_number++;
-
-  found = get_specified_id(f, "fake_id", &val);
-  if (found == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", found);
-    report_error(test_number, test_desc, "0", got);
-  }
-  test_number++;
-
-
-  found = get_specified_id(f, "faker_id", &val);
-  if (found == 0) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", found);
-    report_error(test_number, test_desc, "0", got);
-  }
-
-  // *********************
-  test_desc = "Testing get_specified_id(case 1)";
-  // *********************
-
-  test_number++;
-
-  found = get_specified_id(f, "real_id", &val);
-  if (val == 3) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", val);
-    report_error(test_number, test_desc, "3", got);
-  }
-
-  test_number++;
-
-  found = get_specified_id(f, "realer_id", &val);
-  if (val == 12345) {
-    tests_passed++;
-  }
-  else {
-    sprintf(got, "%d", val);
-    report_error(test_number, test_desc, "12345", got);
-  }
-
-  return 0;
+  EXPECT_EQ(index, -1);
 }
 
-*/
+TEST(fparse, get_char_index_1)
+{
+  char *test;
+  int index;
+  
+  test = "a";
+  index = get_char_index(test, 'a');
+
+  EXPECT_EQ(index, 0);
+}
+
+TEST(fparse, get_char_index_2)
+{
+  char *test;
+  int index;
+  
+  test = "abcdefghijklmnopqrstuvwxyz";
+  index = get_char_index(test, 'z');
+
+  EXPECT_EQ(index, 25);
+}
+
+TEST(fparse, get_char_index_3)
+{
+  char *test;
+  int index;
+  
+  test = "abcdefghijklmnopqrstuvwxyz";
+  index = get_char_index(test, 'a');
+
+  EXPECT_EQ(index, 0);
+}
+
+TEST(fparse, get_char_index_4)
+{
+  char *test;
+  int index;
+  
+  test = "abcdefghijklmnopqrstuvwxyz";
+  index = get_char_index(test, 'n');
+
+  EXPECT_EQ(index, 13);
+}
+
+TEST(fparse, get_id_value_0)
+{
+  char *test;
+  int found;
+  int val;
+
+  test = "This_val=blank";
+  found = get_id_value(test, &val);
+
+  EXPECT_EQ(found, 0);
+}
+
+TEST(fparse, get_id_value_1) 
+{
+  char *test;
+  int found;
+  int val;
+
+  test = "\n";
+  found = get_id_value(test, &val);
+
+  EXPECT_EQ(found, 0);
+}
+
+TEST(fparse, get_id_value_2) 
+{
+  char *test;
+  int val;
+
+  test = "This_val=1\n";
+  
+  get_id_value(test, &val);
+
+  EXPECT_EQ(val, 1);
+}
+
+TEST(fparse, get_id_value_3)
+{
+  char *test;
+  int val;
+
+  test = "This_val=35623\n";
+  get_id_value(test, &val);
+
+  EXPECT_EQ(val, 35623);
+}
+
+TEST(fparse, get_specified_id_0)
+{
+  FILE *f;
+
+  int found;
+  int val;
+
+  f = fopen(TEST_FILE, "r");
+
+  found = get_specified_id(f, "fake_id", &val);
+
+  EXPECT_EQ(found, 0);
+}
+
+TEST(fparse, get_specified_id_1)
+{
+  FILE *f;
+
+  int found;
+  int val;
+
+  f = fopen(TEST_FILE, "r");
+
+  found = get_specified_id(f, "faker_id", &val);
+
+  EXPECT_EQ(found, 0);
+}
+
+TEST(fparse, get_specified_id_2)
+{
+  FILE *f;
+  int val;
+
+  f = fopen(TEST_FILE, "r");
+  get_specified_id(f, "real_id", &val);
+
+  EXPECT_EQ(val, 3);
+}
+
+TEST(fparse, get_specified_id_3)
+{
+  FILE *f;
+
+  int val;
+
+  f = fopen(TEST_FILE, "r");
+  get_specified_id(f, "realer_id", &val);
+  
+  EXPECT_EQ(val, 12345);
+}

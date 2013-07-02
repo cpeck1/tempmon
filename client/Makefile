@@ -2,6 +2,7 @@ TOPDIR  := $(shell cd ..; pwd)
 
 APP := tempmon
 TEST_APP := $(APP)_test
+MOCKTEST_APP := $(APP)_mocktest
 
 MTYPE := $(shell uname -m)
 LANG := en_US                # for gcc error messages
@@ -14,7 +15,8 @@ COMMON_SRCS := \
 	array.c \
 	devtypes.c \
 	fparse.c \
-	usb-operations.c
+	usb-operations.c \
+	tcp-operations.c
 
 SRCS := \
 	$(COMMON_SRCS) \
@@ -38,12 +40,12 @@ CFLAGS += -c $(foreach inc,$(INCLUDE_PATH),-I$(inc)) -Wall -Wextra -pedantic -Wn
 LDFLAGS += $(foreach path,$(LIB_PATH),-L$(path))
 
 ifeq ($(MAKECMDGOALS),test)
-  SRCS := $(TEST_SRCS)
-  CC := g++
-  CXXFLAGS := $(CFLAGS)
-  LIBS += -lpthread -lgtest
-else
-  CC := gcc
+	SRCS := $(TEST_SRCS)
+	CC := g++
+	CXXFLAGS := $(CFLAGS)
+	LIBS += -lpthread -lgtest
+else 
+	CC := gcc
 endif
 
 FILES = $(notdir $(SRCS))
@@ -55,6 +57,8 @@ DEPS := $(OBJ:.o=.d)
 all: $(APP)
 
 test: $(TEST_APP)
+
+mocktest: $(MOCKTEST_APP)
 
 $(APP) : $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)

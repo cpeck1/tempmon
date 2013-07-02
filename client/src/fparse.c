@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "fparse.h"
+
 #define DEVICE_FILE "product.ini"
 #define ID1 "DEVICE_ID_VENDOR"
 #define ID2 "DEVICE_ID_PRODUCT"

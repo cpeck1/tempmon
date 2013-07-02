@@ -10,8 +10,9 @@ uint16_t make_crc(uint8_t *byte_array, int end_position)
   /*
     make a cyclic redundancy check for the given byte array; this is per the
     rules found in the SEM710 specifications provided by Status Instruments;
-    the polynomial 0xA001 doesn't appear to conform to any international
-    crc standard.
+    This crc currently causes the device to respond to messages sent, however
+    the crc the device returns is incorrect by comparison to the one determined
+    here.
   */
   int i;
   uint16_t crc;
@@ -319,11 +320,9 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
     }
   }
 
-  printf("Received message: ");
-  for (i = 0; i < received; i++) {
-    printf("%d ", incoming_buff[i]);
+  if (incoming_buff[1] != confirmation_byte) {
+    return -1;
   }
-  printf("\n");
 
   if (!crc_pass(incoming_buff, received - 2)) {
     /*
