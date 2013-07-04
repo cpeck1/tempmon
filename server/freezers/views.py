@@ -1,27 +1,54 @@
-from django.contrib.auth.models import User
-from rest_framework import permissions
-from rest_framework import renderers
-from rest_framework import viewsets
-from rest_framework.decorators import link
-from rest_framework.response import Response
 from freezers.models import Freezer
+from freezers.serializers import FreezerSerializer
 from freezers.permissions import IsOwnerOrReadOnly
-from freezers.serializers import FreezerSerializer, UserSerializer
+from django.http import Http404
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, generics, permissions, authentication
+from django.contrib.auth.models import User
 
-class FreezerViewSet(viewsets.ModelViewSet):
-    queryset = Freezer.objects.all()
-    serializer_class = FreezerSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, 
-                          IsOwnerOrReadOnly,)
-    
-    @link(renderer_classes=(renderers.StaticHTMLRenderer,))
-    def highlight(self, request, *args, **kwargs):
-        snippet = self.get_object()
-        return Response(snippet.highlighted)
+class FreezerList(APIView):
+    '''
+    List all freezer, or create a new freezer
+    '''
 
-    def pre_save(self, obj):
-        obj.owner = self.request.user
+    def get(self, request, format=None):
+        freezers = Freezer.objects.all()
+        serializer = FreezerSerializer(freezers, many=True)
+        return Response(serializer.data)
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    def post(self, request, format=None):
+        serializer = FreezerSerializer(data=request.DATA)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+class FreezerDetail(APIView):
+    '''
+    Retrieve, update, or delete a freezer instance
+    '''    
+
+    def get_object(self, pk):
+        try:
+            return Freezer.objects.get(pk=pk)
+        except Freezer.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        freezer = self.get_object(pk)
+        serializer = FreezerSerializer(freezer)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        freezer = self.get_object(pk)
+        serializer = FreezerSerializer(freezer, data=request.DATA)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        freezer = self.get_object(pk)
+        freezer.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

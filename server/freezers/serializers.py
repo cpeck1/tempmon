@@ -1,22 +1,17 @@
 from django.forms import widgets
-from django.db import models
-from django.contrib.auth.models import User
 from rest_framework import serializers
 from freezers.models import Freezer, LANGUAGE_CHOICES, STYLE_CHOICES
+from datetime import datetime
 
-class FreezerSerializer(serializers.HyperlinkedModelSerializer):
-    owner = serializers.Field(source='owner.username')
-    highlight = serializers.HyperlinkedIdentityField(
-        view_name='freezer-highlight', format='html')
+from django.contrib.auth.models import User
 
-    class Meta:
-        model = Freezer
-        fields = ('url', 'owner', 'temperature', 'last_update')
-
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    freezers = serializers.ManyHyperlinkedRelatedField(
-        view_name='freezer-detail')
-    
-    class Meta:
-        model = User
-        fields = ('url', 'username', 'freezers')
+class FreezerSerializer(serializers.Serializer):
+    temperature = serializers.FloatField(required=True)
+    last_updated = serializers.DateTimeField(required=False)
+    def restore_object(self, attrs, instance=None):
+        if instance:
+            instance.temperature = attrs.get('temperature', 
+                                             instance.temperature)
+            instance.last_updated = datetime.now()
+            return instance
+        return Freezer(**attrs)

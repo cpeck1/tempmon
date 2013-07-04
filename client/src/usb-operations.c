@@ -49,7 +49,7 @@ int crc_pass(uint8_t *rx_data, int rx_pointer)
   /*
     returns whether the received crc is the same as the calculated crc from
     the byte array passed by the USB device; if it is not, then the usb
-    transfer was faulty
+    transfer was "faulty"
   */
   uint16_t calculated_crc;
   uint16_t rx_crc;
@@ -84,15 +84,12 @@ int detach_device_kernel(int vendor_id, int product_id)
 
   handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
   if (handle == NULL) {
-    printf("Error opening device: device missing.\n");
     return -1;
   }
 
   if (libusb_kernel_driver_active(handle, 0)) {
-    printf("Kernel driver already attached. Detaching...\n");
     detach_failed = libusb_detach_kernel_driver(handle, 0);
     if (detach_failed) {
-      printf("There was an error detaching the kernel driver.\n");
       return -1;
     }
   }
@@ -133,40 +130,22 @@ int prepare_device(struct ftdi_context *ctx)
   int err = 0;
 
   err =  ftdi_usb_purge_rx_buffer(ctx);
-  if (err) {
-    printf("Error: ftdi_purge_rx_buffer(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   err =  ftdi_usb_purge_tx_buffer(ctx);
-  if (err) {
-    printf("Error: ftdi_purge_tx_buffer(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   err = ftdi_set_baudrate(ctx, 19200);
-  if (err) {
-    printf("Error: ftdi_set_baudrate(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   err = ftdi_set_line_property(ctx, BITS_8, STOP_BIT_1, NONE);
-  if (err) {
-    printf("Error: ftdi_set_line_property(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   err = ftdi_setflowctrl(ctx, SIO_DISABLE_FLOW_CTRL);
-  if (err) {
-    printf("Error: ftdi_set_flow_ctrl(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   err = ftdi_set_latency_timer(ctx, 3);
-  if (err) {
-    printf("Error: ftdi_set_latency_timer(%d)\n", err);
-    return err;
-  }
+  if (err) { return err; }
 
   return 0;
 }
@@ -205,7 +184,6 @@ int generate_message(uint8_t COMMAND, uint8_t* byte_array,
 
   /* crc */
   crc = make_crc(output, i);
-  printf("Sent crc: %d\n", crc);
   lbyte = (crc >> 8) & 0xFF;
   rbyte = (crc) & 0xFF;
 
@@ -298,7 +276,6 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
   outgoing_bytes[0] = 0;
   len = generate_message(command, outgoing_bytes, 0);
   if (len <= 0) {
-    printf("Failed to generate message.\n");
     return -1;
   }
 
@@ -307,7 +284,6 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
     /*  until positive response received, or 4 no-replies (2.8 seconds) */
     written = ftdi_write_data(ctx, outgoing_bytes, len);
     if (written < 0) {
-      printf("Error: ftdi_write_data(%d)\n", written);
       return written;
     }
 
@@ -315,7 +291,6 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
 
     received = ftdi_read_data(ctx, incoming_buff, 280);
     if (received < 0) {
-      printf("Error: ftdi_read_data(%d)\n", received);
       return received;
     }
   }
