@@ -6,6 +6,7 @@
 #include "fparse.h"
 #include "devtypes.h"
 #include "usb-operations.h"
+#include "http-operations.h"
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
@@ -53,13 +54,8 @@ int main()
   SEM710_READINGS readings;
   CONFIG_DATA cal;
 
-  CURL *curl;
-  CURLcode res;
-
-  if (!curl) {
-    printf("Failed to initialize curl. Exiting.");
-    return 1;
-  }
+  char *content;
+  char *url = "http://localhost:443/freezers/";
 
   ftHandle = ftdi_new();
 
@@ -74,6 +70,8 @@ int main()
   /* 1: Connect to server */
   /************************/
 
+  content = do_web_get(url);
+  printf("GET Result: %s\n", content);
 
   /*************************/
   /* 2: Open SEM710 device */
@@ -93,8 +91,6 @@ int main()
   /* Communication to server */
   /*****************************************/
   
-  curl_easy_setup(curl, CURLOPT_URL, "http://cbsr.com");
-
   /****************************************/
   /* 3: await instructions (skip for now) */
   /****************************************/

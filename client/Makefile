@@ -16,7 +16,7 @@ COMMON_SRCS := \
 	devtypes.c \
 	fparse.c \
 	usb-operations.c \
-	tcp-operations.c
+	http-operations.c
 
 SRCS := \
 	$(COMMON_SRCS) \
@@ -29,7 +29,7 @@ TEST_SRCS := \
 	test_funcs.c \
 	test_main.c
 
-LIBS := -lm -lftdi -lusb-1.0
+LIBS := -lm -lftdi -lusb-1.0 -lcurl
 LIB_PATH := .
 
 MAKEDEPEND := cpp

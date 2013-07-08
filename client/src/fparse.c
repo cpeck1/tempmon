@@ -25,7 +25,7 @@ int get_char_index(char *string, char chr)
   return -1; /* not found */
 }
 
-int get_id_value(char *line, int *id_val) 
+int get_id_value(char *line, char *id_val) 
 {
 /* 
    get the ID equal to the string phrase in the given line
@@ -51,13 +51,13 @@ int get_id_value(char *line, int *id_val)
     val_str[i] = line[eq_index+1 + i];
   }
   val_str[diff - 1] = '\0';
-  *id_val = atoi(val_str);
+  id_val = val_str;
 
   free(val_str);
   return 1;
 }
 
-int get_specified_id (FILE *f, char *id_phrase, int *id_val)
+int get_specified_id (FILE *f, char *id_phrase, char *id_val)
 {
   int found;
   char line[256];
@@ -75,9 +75,10 @@ int get_specified_id (FILE *f, char *id_phrase, int *id_val)
   return found;
 }
 
-int get_device_ids(int *device_id, int *vendor_id)
+int get_runtime_specifications(int *device_id, int *vendor_id)
 {
   FILE *dfile;
+  char *vid, *pid, *url;
   int found_dev_id;
   int found_vend_id;
 
