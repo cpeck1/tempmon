@@ -30,3 +30,13 @@ application = get_wsgi_application()
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication
 # application = HelloWorldApplication(application)
+
+import os
+import sys
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'server.settings'
+
+from django.contrib.auth.handlers.modwsgi import check_password
+
+from django.core.handlers.wsgi import WSGIHandler
+application = WSGIHandler()

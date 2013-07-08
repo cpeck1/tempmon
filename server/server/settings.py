@@ -11,11 +11,11 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'tmon.db',                     
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'tmon',                     
         # The following settings are not used with sqlite3:
-        'USER': '',
-        'PASSWORD': '',
+        'USER': 'rpi',
+        'PASSWORD': 'radar1196',
         'HOST': '',                    
         'PORT': '',                    
     }
@@ -163,3 +163,5 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     )
 }
+
+DATABASE_NAME = '/var/lib/mysql/tmon'

@@ -11,7 +11,7 @@ class FreezerList(APIView):
     '''
     List all freezers, or create a new freezer.
     '''
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    #permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, format=None):
         freezers = Freezer.objects.all()
@@ -29,7 +29,7 @@ class FreezerDetail(APIView):
     '''
     Retrieve, update, or delete a freezer instance.
     '''
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    #permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self, pk):
         try:
