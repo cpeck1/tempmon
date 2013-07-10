@@ -1,6 +1,7 @@
 #ifndef __INC_DEVTYPES_H
 #define __INC_DEVTYPES_H
 
+#include "cJSON.h"
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -72,10 +73,11 @@ WAITING,
 
 typedef struct {
   float ADC_VALUE;
-  float ELEC_VALUE;
-  float PROCESS_VARIABLE;
-  float MA_OUT;
-  float CJ_TEMP;
+  char *STATUS;
+  /* float ELEC_VALUE; */
+  /* float PROCESS_VARIABLE; */
+  /* float MA_OUT; */
+  /* float CJ_TEMP; */
 } SEM710_READINGS;
 
 typedef struct {
@@ -141,6 +143,8 @@ void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
 		  int array_len);
 
 void display_readings(SEM710_READINGS *readings);
+
+char *pack_readings(SEM710_READINGS *readings);
 
 void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
 

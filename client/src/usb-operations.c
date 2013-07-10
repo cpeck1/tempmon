@@ -84,12 +84,14 @@ int detach_device_kernel(int vendor_id, int product_id)
 
   handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
   if (handle == NULL) {
+    printf("couldn't open device\n");
     return -1;
   }
 
   if (libusb_kernel_driver_active(handle, 0)) {
     detach_failed = libusb_detach_kernel_driver(handle, 0);
     if (detach_failed) {
+      printf("couldn't detach device\n");
       return -1;
     }
   }

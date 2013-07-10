@@ -64,100 +64,103 @@ TEST(fparse, get_char_index_4)
   EXPECT_EQ(index, 13);
 }
 
-TEST(fparse, get_id_value_0)
+TEST(fparse, get_spec_value_0)
 {
   char *test;
   int found;
-  int val;
+  char *val;
 
   test = "This_val=blank";
-  found = get_id_value(test, &val);
-
+  found = get_spec_value(test, &val);
   EXPECT_EQ(found, 0);
 }
 
-TEST(fparse, get_id_value_1) 
+TEST(fparse, get_spec_value_1) 
 {
   char *test;
   int found;
-  int val;
+  char *val;
 
   test = "\n";
-  found = get_id_value(test, &val);
+  found = get_spec_value(test, &val);
 
   EXPECT_EQ(found, 0);
 }
 
-TEST(fparse, get_id_value_2) 
+TEST(fparse, get_spec_value_2) 
 {
   char *test;
-  int val;
+  char *val;
+  int rval;
 
   test = "This_val=1\n";
   
-  get_id_value(test, &val);
-
-  EXPECT_EQ(val, 1);
+  get_spec_value(test, &val);
+  rval = atoi(val);
+  EXPECT_EQ(rval, 1);
 }
 
-TEST(fparse, get_id_value_3)
+TEST(fparse, get_spec_value_3)
 {
   char *test;
-  int val;
+  char *val;
+  int rval;
 
   test = "This_val=35623\n";
-  get_id_value(test, &val);
-
-  EXPECT_EQ(val, 35623);
+  get_spec_value(test, &val);
+  rval = atoi(val);
+  EXPECT_EQ(rval, 35623);
 }
 
-TEST(fparse, get_specified_id_0)
+TEST(fparse, get_spec_0)
 {
   FILE *f;
 
   int found;
-  int val;
-
+  char *val;
   f = fopen(TEST_FILE, "r");
 
-  found = get_specified_id(f, "fake_id", &val);
-
+  found = get_spec(f, "fake_id", &val);
   EXPECT_EQ(found, 0);
 }
 
-TEST(fparse, get_specified_id_1)
+TEST(fparse, get_spec_1)
 {
   FILE *f;
 
   int found;
-  int val;
+  char *val;
 
   f = fopen(TEST_FILE, "r");
 
-  found = get_specified_id(f, "faker_id", &val);
+  found = get_spec(f, "faker_id", &val);
 
   EXPECT_EQ(found, 0);
 }
 
-TEST(fparse, get_specified_id_2)
+TEST(fparse, get_spec_2)
 {
   FILE *f;
-  int val;
+  char *val;
+  int rval;
 
   f = fopen(TEST_FILE, "r");
-  get_specified_id(f, "real_id", &val);
+  get_spec(f, "real_id", &val);
+  rval = atoi(val);
 
-  EXPECT_EQ(val, 3);
+  EXPECT_EQ(rval, 3);
 }
 
-TEST(fparse, get_specified_id_3)
+TEST(fparse, get_spec_3)
 {
   FILE *f;
 
-  int val;
+  char *val;
+  int rval;
 
   f = fopen(TEST_FILE, "r");
-  get_specified_id(f, "realer_id", &val);
-  
-  EXPECT_EQ(val, 12345);
+  get_spec(f, "realer_id", &val);
+  rval = atoi(val);
+
+  EXPECT_EQ(rval, 12345);
 }

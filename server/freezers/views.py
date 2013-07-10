@@ -12,7 +12,6 @@ class FreezerList(APIView):
     List all freezers, or create a new freezer.
     '''
     #permission_classes = (permissions.IsAuthenticated,)
-
     def get(self, request, format=None):
         freezers = Freezer.objects.all()
         serializer = FreezerSerializer(freezers, many=True)

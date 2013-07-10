@@ -16,14 +16,13 @@ extern "C" {
     get the ID equal to the string phrase in the given line
     returns 1 if id found, and 0 if file is malformed
   */
-  int get_id_value(char *line, int *id_val);
+  int get_spec_value(char *line, char **val);
 
+  int get_spec(FILE *f, char *id_phrase, char **val);
 
-  int get_specified_id(FILE *f, char *id_phrase, int *id_val);
+  int get_runtime_specifications(int *device_id, int *vendor_id, char **url);
 
-
-  int get_device_ids(int *device_id, int *vendor_id);
-
+  void get_file(FILE *f, char *buffer);
 #ifdef __cplusplus
 }
 #endif

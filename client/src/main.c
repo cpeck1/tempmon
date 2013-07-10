@@ -7,6 +7,7 @@
 #include "devtypes.h"
 #include "usb-operations.h"
 #include "http-operations.h"
+#include "cJSON.h"
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
@@ -36,10 +37,19 @@ int get_user_selection()
 }
 
 
-int main()
+int main(void)
 {
+  FILE *dfile;
+  int size;
+  char *fbuffer;
+
+  cJSON *root;
+  cJSON *specifications;
+  char *json_readings;
+
   int product_id;
   int vendor_id;
+  char *url;
 
   int err;
   int looping;
@@ -55,16 +65,30 @@ int main()
   CONFIG_DATA cal;
 
   char *content;
-  char *url = "http://localhost:443/freezers/";
 
   ftHandle = ftdi_new();
 
+  curl_global_init(CURL_GLOBAL_ALL);
+
   /* Get device ids from file: */
-  err = get_device_ids(&product_id, &vendor_id);
-  if (err) {
-    printf("Error: bad or missing device file\n");
-    return 1;
-  }
+  dfile = fopen("product.json", "r");
+
+  fseek(dfile, 0L, SEEK_END);
+  size = ftell(dfile);
+  fseek(dfile, 0L, SEEK_SET);
+
+  fbuffer = (char *) malloc(size);
+  get_file(dfile, fbuffer);
+  fclose(dfile);
+
+  root = cJSON_Parse(fbuffer);
+  specifications = cJSON_GetObjectItem(root, "specifications");
+
+  product_id = cJSON_GetObjectItem(specifications, "product_id")->valueint;
+  vendor_id = cJSON_GetObjectItem(specifications, "vendor_id")->valueint;
+  url = cJSON_GetObjectItem(specifications, "url")->valuestring;
+  /* free(fbuffer); */
+  /* cJSON_Delete(root); */
 
   /************************/
   /* 1: Connect to server */
@@ -78,13 +102,22 @@ int main()
   /*************************/
 
   err = detach_device_kernel(vendor_id, product_id);
-  if (err) { return 1; }
+  if (err) {
+    printf("error detaching device kernel\n");
+    return 1; 
+  }
 
   err = open_device(ftHandle, vendor_id, product_id);
-  if (err) { return 1; }
+  if (err) { 
+    printf("error opening device \n");
+    return 1; 
+  }
 
   err = prepare_device(ftHandle);
-  if (err) { return 1; }
+  if (err) { 
+    printf("error preparing device \n");
+    return 1;
+  }
 
   printf("Device prepared.\n");
   /*****************************************/
@@ -108,12 +141,15 @@ int main()
     case 1: /* read process */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
       if (read_bytes <= 0) {
-	printf("Read process failure.\n");
-	looping = 0;
+  	printf("Read process failure.\n");
+  	looping = 0;
       }
       else {
         get_readings(&readings, inc_buf, read_bytes);
-	display_readings(&readings);
+  	display_readings(&readings);
+	json_readings = pack_readings(&readings);
+	printf("json_readings=%s\n", json_readings);
+	do_web_put(url, json_readings);
       }
       break;
     case 2:  /* read config */
@@ -124,7 +160,7 @@ int main()
       }
       else {
         get_config(&cal, inc_buf, read_bytes);
-	display_config(&cal);
+  	display_config(&cal);
       }
       break;
     default:
@@ -148,6 +184,8 @@ int main()
   /* 6: close device */
   ftdi_usb_close(ftHandle);
   ftdi_free(ftHandle);
+  free(fbuffer);
+  cJSON_Delete(root);
 
   return 0;
 }

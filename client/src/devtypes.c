@@ -1,5 +1,6 @@
 #include "devtypes.h"
 #include "array.h"
+#include "cJSON.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -81,21 +82,54 @@ void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
 		  int array_len)
 {
   assert (array_len > 23);
+  float process_variable = float_from_byte_array(byte_array, 11);
 
   readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
-  readings->ELEC_VALUE = float_from_byte_array(byte_array, 7);
-  readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11);
-  readings->MA_OUT = float_from_byte_array(byte_array, 15);
-  readings->CJ_TEMP = float_from_byte_array(byte_array, 19);
+  if (process_variable == -1000000.000000) {
+    readings->STATUS = "ERROR: PROBE MISSING";
+  }
+  else {
+    readings->STATUS = "OK";
+  }
+
+  /* readings->ELEC_VALUE = float_from_byte_array(byte_array, 7); */
+  /* readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11); */
+  /* readings->MA_OUT = float_from_byte_array(byte_array, 15); */
+  /* readings->CJ_TEMP = float_from_byte_array(byte_array, 19); */
 }
 
 void display_readings(SEM710_READINGS *readings)
 {
   printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
-  printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE);
-  printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE);
-  printf("MA_OUT=%f\n", readings->MA_OUT);
-  printf("CJ_TEMP=%f\n", readings->CJ_TEMP);
+  printf("STATUS=%s\n", readings->STATUS);
+  /* printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE); */
+  /* printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE); */
+  /* printf("MA_OUT=%f\n", readings->MA_OUT); */
+  /* printf("CJ_TEMP=%f\n", readings->CJ_TEMP); */
+}
+
+char *pack_readings(SEM710_READINGS *readings)
+{
+  char temperature[20];
+  char status[20];
+  char json_readings[100] = "";
+
+  sprintf(json_readings, "{ 'temperature': %f, 'status': %s }",
+	  readings->ADC_VALUE, status);
+  
+  return json_readings;
+
+  /* strcat(json_readings, "\"temperature\":"); */
+  /* strcat(json_readings, temperature); */
+  /* strcat(json_readings, ", \"status\":"); */
+  /* strcat(json_readings, status); */
+  /* strcat(json_readings, "}"); */
+
+  /* char *retval = json_readings; */
+
+  /* // return "{ \"temperature\":55.1, \"status\":\"ok\" }"; */
+
+  /* return retval; */
 }
 
 void get_config(CONFIG_DATA *cal, uint8_t *byte_array, int array_len)

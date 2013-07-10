@@ -8,7 +8,7 @@
 #define DEVICE_FILE "product.ini"
 #define ID1 "DEVICE_ID_VENDOR"
 #define ID2 "DEVICE_ID_PRODUCT"
-#define ID3 "DEVICE_ID_SERIAL"
+#define ID3 "URL"
 
 int get_char_index(char *string, char chr)
 {
@@ -25,77 +25,97 @@ int get_char_index(char *string, char chr)
   return -1; /* not found */
 }
 
-int get_id_value(char *line, char *id_val) 
+int get_spec_value(char *line, char **val) 
 {
-/* 
-   get the ID equal to the string phrase in the given line
-   returns 1 if id found, and 0 if file is malformed 
-*/
-  int eq_index;
-  int eol_index;
-  int diff;
-  char *val_str;
-  int i;
-
+  /* 
+     get the ID equal to the string phrase in the given line
+     returns 1 if id found, and 0 if file is malformed 
+  */
+  int eq_index, eol_index, diff, i;
+  char valstr[100];
   eq_index = get_char_index(line, '=');
   eol_index = get_char_index(line, '\n');
 
   if (eq_index == -1 || eol_index == -1) {
+    printf("missing eq or eol index\n");
     return 0;
   }
 
   diff = eol_index - eq_index;
-  val_str = (char *) malloc(diff);
-  
+  printf("line=%s\n", line);
   for (i = 0; i < diff - 1; i++) {
-    val_str[i] = line[eq_index+1 + i];
+    valstr[i] = line[eq_index+1 + i];
   }
-  val_str[diff - 1] = '\0';
-  id_val = val_str;
+  valstr[diff - 1] = '\0';
 
-  free(val_str);
+  *val = valstr;
+
   return 1;
 }
 
-int get_specified_id (FILE *f, char *id_phrase, char *id_val)
+int get_spec(FILE *f, char *phrase, char **val)
 {
   int found;
   char line[256];
   
   rewind(f);
   found = 0;
-  while (!feof(f)) {
-    if (fgets(line, 256, f) != NULL) {
-      if (strstr(line, id_phrase)) {
-	found = get_id_value(line, id_val);
-	break;
-      }
+  while (fgets(line, 256, f)) {
+    if (strstr(line, phrase)) {
+      found = get_spec_value(line, val);
+      break;
     }
   }
   return found;
 }
 
-int get_runtime_specifications(int *device_id, int *vendor_id)
+int get_runtime_specifications(int *device_id, int *vendor_id, char **url)
 {
   FILE *dfile;
-  char *vid, *pid, *url;
-  int found_dev_id;
-  int found_vend_id;
-
+  char *vid, *pid, *furl;
+  int found_dev_id, found_vend_id, found_url;
+  
   dfile = fopen(DEVICE_FILE, "r");
   if (!dfile) {
     printf("Error: missing device file\n");
     return -1;
   }
+  found_url = get_spec(dfile, ID3, &furl);
+  *url = furl;
 
-  found_dev_id = get_specified_id(dfile, ID1, vendor_id);
-  found_vend_id = get_specified_id(dfile, ID2, device_id);
+  /* found_vend_id = (int) get_spec(dfile, ID1, &vid); */
+  /* printf("get spec vid=%s\n", vid); */
+  /* *vendor_id = strtol(vid, 0, 16); */
+  /* printf("vendor_id1=%d\n", *vendor_id); */
 
-  if (found_dev_id && found_vend_id) {
+  found_vend_id = get_spec(dfile, ID1, &vid);
+  printf("vid=%s\n", vid);
+  *vendor_id = strtol(vid, 0, 10);
+
+  found_dev_id = get_spec(dfile, ID2, &pid);
+  printf("pid=%s\n", pid);
+  *device_id = strtol(pid, 0, 10);
+
+  if (found_dev_id && found_vend_id && found_url) {
+    printf("*device_id=%d\n", *device_id);
+    printf("*vendor_id=%d\n", *vendor_id);
+    printf("*url=%s\n", *url);
     return 0;
   }
   else {
     printf("Error: bad device file\n");
     return -1;
+  }
+}
+
+void get_file(FILE *f, char *buffer)
+{
+  int i = 0;
+  char line[256];
+
+  while (fgets(line, 256, f)) {
+    if (line) {
+      strcat(buffer, line);
+    }
   }
 }
