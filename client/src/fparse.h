@@ -23,6 +23,10 @@ extern "C" {
   int get_runtime_specifications(int *device_id, int *vendor_id, char **url);
 
   void get_file(FILE *f, char *buffer);
+
+  int get_specifications(char *filename, char **freezer_num, 
+		       char **specifications_url, char **auth_usr,
+			 char **auth_pwd);
 #ifdef __cplusplus
 }
 #endif

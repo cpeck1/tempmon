@@ -40,18 +40,15 @@ int get_user_selection()
 
 int main(void)
 {
-  FILE *dfile;
-  int size;
-  char *fbuffer;
-
   cJSON *root;
   cJSON *specifications;
-  int freezer_num;
+  char *freezer_num;
   char *specifications_url;
   char *auth_user;
   char *auth_pwd;
 
   cJSON *webroot;
+  cJSON *webspecs;
   float read_frequency;
   char *upload_url_root;
   int product_id;
@@ -59,6 +56,7 @@ int main(void)
 
   int err;
   int looping;
+  int len;
 
   struct ftdi_context *ftHandle;
 
@@ -71,52 +69,47 @@ int main(void)
   CONFIG_DATA cal;
 
   char *content;
+  char json_content[1024];
 
   ftHandle = ftdi_new();
 
   curl_global_init(CURL_GLOBAL_ALL);
 
-  /* Get device ids from file: */
-  dfile = fopen("product.json", "r");
-
-  fseek(dfile, 0L, SEEK_END);
-  size = ftell(dfile);
-  fseek(dfile, 0L, SEEK_SET);
-
-  fbuffer = (char *) malloc(size);
-  get_file(dfile, fbuffer);
-  fclose(dfile);
-
-  root = cJSON_Parse(fbuffer);
-  specifications = cJSON_GetObjectItem(root, "specifications");
-
-  freezer_num = cJSON_GetObjectItem(specifications, "freezer_num")->valueint;
-  specifications_url = cJSON_GetObjectItem(specifications, "url")->valuestring;
-  auth_user = cJSON_GetObjectItem(specifications, "user")->valuestring;
-  auth_pwd = cJSON_GetObjectItem(specifications, "pwd")->valuestring;
-  /* free(fbuffer); */
-  /* cJSON_Delete(root); */
+  if (get_specifications("product.json", &freezer_num, &specifications_url,
+  			 &auth_user, &auth_pwd)) {
+    return 1;
+  }
 
   /************************/
   /* 1: Connect to server */
   /************************/
 
-  content = do_web_get(specifications_url, auth_user, auth_pwd);
-  webroot = cJSON_Parse(content);
+  /* content = do_web_get(specifications_url, auth_user, auth_pwd); */
+  /* /\* */
+  /*    The following "fix" was necessitated by cJSON's insistence that you cannot */
+  /*    fetch object items from roots */
+  /* *\/ */
+  /* strcpy(json_content, "{\"specifications\":"); */
+  /* strncat(json_content, content+1, strlen(content)-2); */
+  /* strcat(json_content, "}"); */
+  /* webroot = cJSON_Parse(json_content); */
+  /* webspecs = cJSON_GetObjectItem(webroot, "specifications"); */
 
-  content = cJSON_PrintUnformatted(webroot);
-  
-  /* read_frequency = (float) cJSON_GetArrayItem(webroot, */
+  /* read_frequency = (float) cJSON_GetObjectItem(webspecs, */
   /* 					       "read_frequency")->valuedouble; */
-  /* upload_url_root = cJSON_GetObjectItem(webroot, */
+  /* upload_url_root = cJSON_GetObjectItem(webspecs, */
   /* 					"upload_url_root")->valuestring; */
-  /* product_id = cJSON_GetObjectItem(webroot, "product_id")->valueint; */
-  /* vendor_id = cJSON_GetObjectItem(webroot, "vendor_id")->valueint; */
+  /* product_id = cJSON_GetObjectItem(webspecs, "product_id")->valueint; */
+  /* vendor_id = cJSON_GetObjectItem(webspecs, "vendor_id")->valueint; */
+  
+  if (get_runtime_specifications(specifications_url, auth_user, auth_pwd,
+				 &read_frequency, &upload_url_root,
+				 &product_id, &vendor_id)) {
+    return 1;
+  }
 
-  /* printf("read_frequency = %f, upload_url_root = %s, product_id = %d, vendor_id = %d\n", read_frequency, upload_url_root, product_id, vendor_id); */
+  strcat(upload_url_root, freezer_num);
 
-  printf("GET Result: %s\n", content);
-  return 0;
   /*************************/
   /* 2: Open SEM710 device */
   /*************************/
@@ -150,15 +143,15 @@ int main(void)
 
   looping = 1;
   while (looping) {
-    show_user_options();
-    selection = get_user_selection();
-    printf("\n");
+    /* show_user_options(); */
+    /* selection = get_user_selection(); */
+    /* printf("\n"); */
 
-    switch(selection) {
-    case 0:
-      looping = 0;
-      break;
-    case 1: /* read process */
+    /* switch(selection) { */
+    /* case 0: */
+    /*   looping = 0; */
+    /*   break; */
+    /* case 1: /\* read process *\/ */
       read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
       if (read_bytes <= 0) {
   	printf("Read process failure.\n");
@@ -168,24 +161,23 @@ int main(void)
         get_readings(&readings, inc_buf, read_bytes);
   	display_readings(&readings);
         pack_readings(&readings, READINGS_FILE);
-	// do_web_put(url, READINGS_FILE, auth_user, auth_pwd);
+	do_web_put(upload_url_root, READINGS_FILE, auth_user, auth_pwd);
       }
-      break;
-    case 2:  /* read config */
-      read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf);
-      if (read_bytes <= 0) {
-    	printf("Read calibration failure.\n");
-    	looping = 0;
-      }
-      else {
-        get_config(&cal, inc_buf, read_bytes);
-  	display_config(&cal);
-      }
-      break;
-    default:
-      printf("Selection invalid.\n");
-      break;
-    }
+    /* case 2:  /\* read config *\/ */
+    /*   read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf); */
+    /*   if (read_bytes <= 0) { */
+    /* 	printf("Read calibration failure.\n"); */
+    /* 	looping = 0; */
+    /*   } */
+    /*   else { */
+    /*     get_config(&cal, inc_buf, read_bytes); */
+    /* 	display_config(&cal); */
+    /*   } */
+    /*   break; */
+    /* default: */
+    /*   printf("Selection invalid.\n"); */
+    /*   break; */
+    /* } */
     usleep(500000);
   }
   /****************************/
@@ -203,9 +195,6 @@ int main(void)
   /* 6: close device */
   ftdi_usb_close(ftHandle);
   ftdi_free(ftHandle);
-  free(fbuffer);
-  cJSON_Delete(root);
-
   return 0;
 }
 

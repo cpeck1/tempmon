@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include "cJSON.h"
 
 void write_callback_func(void *buffer, size_t size,
 				  size_t nmemb, void *userp)
@@ -123,47 +124,42 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
 
     curl_easy_cleanup(curl);
   }
-  /* CURL *curl; */
-  /* CURLcode res; */
-  /* struct curl_slist *slist = NULL; */
-  /* char user[] = "rpi"; */
-  /* char pwd[] = "radar1196"; */
+}
 
-  /* curl = curl_easy_init(); */
-  /* if (curl) { */
-  /*   /\* we want to use our own read function *\/ */
-  /*   curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback); */
+int get_runtime_specifications(char *url, char *user, char *pwd,
+			       float *wait_duration, char **upload_url, 
+			       int *product_id, int *vendor_id)
+{
+  cJSON *webroot;
+  cJSON *webspecs;
 
-  /*   slist = curl_slist_append(slist, "Content-Type: application/json"); */
-  /*   /\* slist = curl_slist_append(slist, "cpeck1:radar"); *\/ */
-  /*   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist); */
-  /*   /\* enable uploading *\/ */
-  /*   /\* curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L); *\/ */
-    
-  /*   /\*  */
-  /*      specify target URL, and note that this URL should include a file name, */
-  /*      not only a directory */
-  /*   *\/ */
-  /*   curl_easy_setopt(curl, CURLOPT_URL, url); */
+  int specification_len = 1024;
+  char *content;
+  char json_content[specification_len];
 
-  /*   /\* now specify which file to upload *\/ */
-  /*   /\* curl_easy_setopt(curl, CURLOPT_READDATA, to_put); *\/ */
-  /*   /\* curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(to_put)); *\/ */
-  /*   curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT"); */
-  /*   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, to_put); */
+  content = do_web_get(url, user, pwd);
 
-  /*   curl_easy_setopt(curl, CURLOPT_USERNAME, user); */
-  /*   curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd); */
-  /*   /\*  */
-  /*      provide the size of the upload, we specifically typecast the value to */
-  /*      curl_off_t since we must be sure to use the correct data size */
-  /*   *\/ */
-  /*   res = curl_easy_perform(curl); */
+  if ((int) strlen(content) < specification_len) {
+    /*
+      The following "fix" was necessitated by cJSON's insistence that you cannot
+      fetch object items from roots
+    */
+    strcpy(json_content, "{\"specifications\":");
+    strncat(json_content, content+1, strlen(content)-2);
+    strcat(json_content, "}");
 
-  /*   if (res && res != CURLE_OK) { */
-  /*     printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); */
-  /*   } */
+    webroot = cJSON_Parse(json_content);
+    webspecs = cJSON_GetObjectItem(webroot, "specifications");
 
-  /*   curl_easy_cleanup(curl); */
-  /* } */
+    *wait_duration = (float) cJSON_GetObjectItem(webspecs,
+						 "read_frequency")->valuedouble;
+    *upload_url = cJSON_GetObjectItem(webspecs,
+					  "upload_url_root")->valuestring;
+    *product_id = cJSON_GetObjectItem(webspecs, "product_id")->valueint;
+    *vendor_id = cJSON_GetObjectItem(webspecs, "vendor_id")->valueint;  
+
+    return 0;
+  }
+
+  return -1;
 }

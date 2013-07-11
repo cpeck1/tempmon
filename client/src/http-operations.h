@@ -14,6 +14,9 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 char *do_web_get(char *url, char *user, char *pwd);
 char *do_web_put(char *url, char *to_put, char *user, char *pwd);
 
+int get_runtime_specifications(char *url, char *user, char *pwd,
+			       float *wait_duration, char **upload_url, 
+			       int *product_id, int *vendor_id)
 #ifdef __cplusplus
 }
 #endif
