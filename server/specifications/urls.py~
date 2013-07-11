@@ -1,0 +1,10 @@
+from django.conf.urls import patterns, url
+from rest_framework.urlpatterns import format_suffix_patterns
+from specifications import views
+from django.conf.urls import include
+
+urlpatterns = patterns('specifications.views',
+    url(r'^specifications/$', 'specifications'),   
+)
+
+urlpatterns = format_suffix_patterns(urlpatterns)

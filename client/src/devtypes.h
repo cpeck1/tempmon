@@ -144,7 +144,7 @@ void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
 
 void display_readings(SEM710_READINGS *readings);
 
-char *pack_readings(SEM710_READINGS *readings);
+void pack_readings(SEM710_READINGS *readings, char *filename);
 
 void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
 

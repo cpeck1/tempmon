@@ -110,12 +110,9 @@ int get_runtime_specifications(int *device_id, int *vendor_id, char **url)
 
 void get_file(FILE *f, char *buffer)
 {
-  int i = 0;
   char line[256];
 
   while (fgets(line, 256, f)) {
-    if (line) {
-      strcat(buffer, line);
-    }
+    strcat(buffer, line);
   }
 }

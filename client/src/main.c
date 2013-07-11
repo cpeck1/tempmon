@@ -11,6 +11,7 @@
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
+#define READINGS_FILE "lastread.json"
 
 void show_user_options()
 {
@@ -45,11 +46,16 @@ int main(void)
 
   cJSON *root;
   cJSON *specifications;
-  char *json_readings;
+  int freezer_num;
+  char *specifications_url;
+  char *auth_user;
+  char *auth_pwd;
 
+  cJSON *webroot;
+  float read_frequency;
+  char *upload_url_root;
   int product_id;
   int vendor_id;
-  char *url;
 
   int err;
   int looping;
@@ -84,9 +90,10 @@ int main(void)
   root = cJSON_Parse(fbuffer);
   specifications = cJSON_GetObjectItem(root, "specifications");
 
-  product_id = cJSON_GetObjectItem(specifications, "product_id")->valueint;
-  vendor_id = cJSON_GetObjectItem(specifications, "vendor_id")->valueint;
-  url = cJSON_GetObjectItem(specifications, "url")->valuestring;
+  freezer_num = cJSON_GetObjectItem(specifications, "freezer_num")->valueint;
+  specifications_url = cJSON_GetObjectItem(specifications, "url")->valuestring;
+  auth_user = cJSON_GetObjectItem(specifications, "user")->valuestring;
+  auth_pwd = cJSON_GetObjectItem(specifications, "pwd")->valuestring;
   /* free(fbuffer); */
   /* cJSON_Delete(root); */
 
@@ -94,9 +101,22 @@ int main(void)
   /* 1: Connect to server */
   /************************/
 
-  content = do_web_get(url);
-  printf("GET Result: %s\n", content);
+  content = do_web_get(specifications_url, auth_user, auth_pwd);
+  webroot = cJSON_Parse(content);
 
+  content = cJSON_PrintUnformatted(webroot);
+  
+  /* read_frequency = (float) cJSON_GetArrayItem(webroot, */
+  /* 					       "read_frequency")->valuedouble; */
+  /* upload_url_root = cJSON_GetObjectItem(webroot, */
+  /* 					"upload_url_root")->valuestring; */
+  /* product_id = cJSON_GetObjectItem(webroot, "product_id")->valueint; */
+  /* vendor_id = cJSON_GetObjectItem(webroot, "vendor_id")->valueint; */
+
+  /* printf("read_frequency = %f, upload_url_root = %s, product_id = %d, vendor_id = %d\n", read_frequency, upload_url_root, product_id, vendor_id); */
+
+  printf("GET Result: %s\n", content);
+  return 0;
   /*************************/
   /* 2: Open SEM710 device */
   /*************************/
@@ -147,9 +167,8 @@ int main(void)
       else {
         get_readings(&readings, inc_buf, read_bytes);
   	display_readings(&readings);
-	json_readings = pack_readings(&readings);
-	printf("json_readings=%s\n", json_readings);
-	do_web_put(url, json_readings);
+        pack_readings(&readings, READINGS_FILE);
+	// do_web_put(url, READINGS_FILE, auth_user, auth_pwd);
       }
       break;
     case 2:  /* read config */

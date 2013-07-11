@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 uint8_t get_confirmation_byte(SEM_COMMANDS c) {
   /*
@@ -78,24 +79,31 @@ uint8_t get_confirmation_byte(SEM_COMMANDS c) {
   return 0;
 }
 
+char *get_device_read_status(uint8_t *byte_array) 
+{
+  float elect_value = float_from_byte_array(byte_array, 7);
+  float process_variable = float_from_byte_array(byte_array, 11);
+  float ma_out = float_from_byte_array(byte_array, 15);
+  float cj_temp = float_from_byte_array(byte_array, 19);
+
+  if (process_variable == -1000000.000000) {
+    return "ERROR: PROBE MISSING";
+  }
+  else if (0 /* additional status conditions go here */) {
+    return "";
+  }
+  else {
+    return "OK";
+  }
+}
+
 void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
 		  int array_len)
 {
   assert (array_len > 23);
-  float process_variable = float_from_byte_array(byte_array, 11);
 
   readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
-  if (process_variable == -1000000.000000) {
-    readings->STATUS = "ERROR: PROBE MISSING";
-  }
-  else {
-    readings->STATUS = "OK";
-  }
-
-  /* readings->ELEC_VALUE = float_from_byte_array(byte_array, 7); */
-  /* readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11); */
-  /* readings->MA_OUT = float_from_byte_array(byte_array, 15); */
-  /* readings->CJ_TEMP = float_from_byte_array(byte_array, 19); */
+  readings->STATUS = get_device_read_status(byte_array);
 }
 
 void display_readings(SEM710_READINGS *readings)
@@ -108,16 +116,17 @@ void display_readings(SEM710_READINGS *readings)
   /* printf("CJ_TEMP=%f\n", readings->CJ_TEMP); */
 }
 
-char *pack_readings(SEM710_READINGS *readings)
+void pack_readings(SEM710_READINGS *readings, char *filename)
 {
-  char temperature[20];
-  char status[20];
-  char json_readings[100] = "";
+  char json_readings[100];
+  FILE *f;
 
-  sprintf(json_readings, "{ 'temperature': %f, 'status': %s }",
-	  readings->ADC_VALUE, status);
-  
-  return json_readings;
+  sprintf(json_readings, "{ \"temperature\": %f, \"status\": \"%s\" }",
+	  readings->ADC_VALUE, readings->STATUS);
+
+  f = fopen(filename, "w");
+  fputs(json_readings, f);
+  fclose(f);
 
   /* strcat(json_readings, "\"temperature\":"); */
   /* strcat(json_readings, temperature); */
