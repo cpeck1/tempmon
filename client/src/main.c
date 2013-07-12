@@ -2,6 +2,7 @@
 #define MAIN_FN
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "fparse.h"
 #include "devtypes.h"
@@ -11,8 +12,8 @@
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
-#define SPEC_FILE "product.json"
-#define READINGS_FILE "lastread.json"
+#define SPEC_FILE "/home/cpeck1/workspace/tempmon3/tempmon/client/product.json"
+#define READINGS_FILE "/home/cpeck1/workspace/tempmon3/tempmon/client/lastread.json"
 
 void show_user_options()
 {
@@ -41,10 +42,16 @@ int get_user_selection()
 
 int main(void)
 {
-  char *freezer_num;
-  char *specifications_url;
-  char *auth_user;
-  char *auth_pwd;
+  if (geteuid() != 0) {
+    puts("\nProgram must be executed with root privileges.");
+    puts("Re-run using: \"sudo ./(executable)\"");
+    return 1;
+  }
+  
+  char *freezer_num = NULL;
+  char *specifications_url = NULL;
+  char *auth_user = NULL;
+  char *auth_pwd = NULL;
 
   float read_frequency;
   char *upload_url_root;
@@ -66,27 +73,28 @@ int main(void)
   ftHandle = ftdi_new();
 
   curl_global_init(CURL_GLOBAL_ALL);
-
-  if (get_specifications(SPEC_FILE, &freezer_num, &specifications_url,
+  if (get_specifications("product.json", &freezer_num, &specifications_url,
   			 &auth_user, &auth_pwd)) {
+    puts("Failed to fetch specifications from file. Exiting...");
     return 1;
   }
 
   looping = 1;
   while (looping) {
-    if (get_specifications(SPEC_FILE, &freezer_num, &specifications_url,
-			   &auth_user, &auth_pwd)) {
-      return 1;
-    }
+    usleep(500000);
+    /* if (get_specifications(SPEC_FILE, &freezer_num, &specifications_url, */
+    /* 			   &auth_user, &auth_pwd)) { */
+    /*   continue; */
+    /* } */
     /************************/
     /* 1: Connect to server */
     /************************/
     if (get_runtime_specifications(specifications_url, auth_user, auth_pwd,
 				   &read_frequency, &upload_url_root,
 				   &product_id, &vendor_id)) {
-      return 1;
+      puts("Failed to fetch runtime specifications from server. Retrying...");
+      continue;
     }
-
     strcat(upload_url_root, freezer_num);
 
     /*************************/
@@ -95,20 +103,20 @@ int main(void)
 
     err = detach_device_kernel(vendor_id, product_id);
     if (err) {
-      printf("error detaching device kernel\n");
-      return 1; 
+      printf("Error detaching device kernel. Is the device attached?\n");
+      continue; 
     }
 
     err = open_device(ftHandle, vendor_id, product_id);
     if (err) { 
-      printf("error opening device \n");
-      return 1; 
+      printf("Error opening device.\n");
+      continue; 
     }
 
     err = prepare_device(ftHandle);
     if (err) { 
-      printf("error preparing device \n");
-      return 1;
+      printf("Error preparing device.\n");
+      continue;
     }
 
     printf("Device prepared.\n");
@@ -116,7 +124,7 @@ int main(void)
     ftdi_usb_close(ftHandle);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
-      looping = 0;
+      continue;
     }
     else {
       get_readings(&readings, inc_buf, read_bytes);
@@ -139,7 +147,7 @@ int main(void)
     /*   printf("Selection invalid.\n"); */
     /*   break; */
     /* } */
-    usleep(500000);
+
   }
   /****************************/
   /* 4: read data from SEM710 */

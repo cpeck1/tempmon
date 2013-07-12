@@ -130,16 +130,21 @@ int get_runtime_specifications(char *url, char *user, char *pwd,
 			       float *wait_duration, char **upload_url, 
 			       int *product_id, int *vendor_id)
 {
-  cJSON *webroot;
-  cJSON *webspecs;
+  cJSON *webroot = NULL;
+  cJSON *webspecs = NULL;
+
+  cJSON *ob = NULL;
 
   int specification_len = 1024;
-  char *content;
+  char *content = NULL;
   char json_content[specification_len];
 
   content = do_web_get(url, user, pwd);
+  if (!content) {
+    return -1;
+  }
 
-  if ((int) strlen(content) < specification_len) {
+  if (((int) strlen(content) < specification_len) && (content != NULL)) {
     /*
       The following "fix" was necessitated by cJSON's insistence that you cannot
       fetch object items from roots
@@ -149,17 +154,36 @@ int get_runtime_specifications(char *url, char *user, char *pwd,
     strcat(json_content, "}");
 
     webroot = cJSON_Parse(json_content);
-    webspecs = cJSON_GetObjectItem(webroot, "specifications");
+    if (webroot != NULL) {
+      webspecs = cJSON_GetObjectItem(webroot, "specifications");
+      if (webspecs != NULL) {
+	ob = cJSON_GetObjectItem(webspecs, "read_frequency");
+	cJSON_Print(ob);
+	if (ob != NULL) {
+	  *wait_duration = ob->valuedouble;
+	} else { return -1; }
 
-    *wait_duration = (float) cJSON_GetObjectItem(webspecs,
-						 "read_frequency")->valuedouble;
-    *upload_url = cJSON_GetObjectItem(webspecs,
-					  "upload_url_root")->valuestring;
-    *product_id = cJSON_GetObjectItem(webspecs, "product_id")->valueint;
-    *vendor_id = cJSON_GetObjectItem(webspecs, "vendor_id")->valueint;  
+	ob = cJSON_GetObjectItem(webspecs, "upload_url_root");
+	cJSON_Print(ob);
+	if (ob != NULL) {
+	  *upload_url = ob->valuestring;
+	} else { return -1; }
 
-    return 0;
+	ob = cJSON_GetObjectItem(webspecs, "product_id");
+	cJSON_Print(ob);
+	if (ob != NULL) {
+	  *product_id = ob->valueint;
+	} else { return -1; }
+
+	ob = cJSON_GetObjectItem(webspecs, "vendor_id");
+	cJSON_Print(ob);
+	if (ob != NULL) {
+	  *vendor_id = ob->valueint;
+	} else { return -1; }
+
+	return 0;
+      }
+    }
   }
-
   return -1;
 }
