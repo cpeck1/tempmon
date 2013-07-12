@@ -17,11 +17,11 @@
 
 int main(void)
 {
-  if (geteuid() != 0) {
-    puts("\nProgram must be executed with root privileges.");
-    puts("Re-run using: \"sudo ./(executable)\"");
-    return 1;
-  }
+ // if (geteuid() != 0) {
+  //  puts("\nProgram must be executed with root privileges.");
+   // puts("Re-run using: \"sudo ./(executable)\"");
+   // return 1;
+ // }
   
   char *freezer_num = NULL;
   char *specifications_url = NULL;
