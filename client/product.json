@@ -1,7 +1,7 @@
 {
     "specifications": {
 	"freezer_num":"1/",
-	"url":"http://localhost:443/specifications/",
+	"url":"http://10.13.7.179:443/specifications/",
 	"user":"rpi",
 	"pwd":"radar1196"
     }

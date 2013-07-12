@@ -125,6 +125,7 @@ void pack_readings(SEM710_READINGS *readings, char *filename)
 	  readings->ADC_VALUE, readings->STATUS);
 
   f = fopen(filename, "w");
+  puts(json_readings);
   fputs(json_readings, f);
   fclose(f);
 
