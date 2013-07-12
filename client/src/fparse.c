@@ -24,7 +24,7 @@ int get_specifications(char *filename, char **freezer_num,
 
   int filesize;
   int buffsize = 1024;
-  char *fbuffer[buffsize];
+  char fbuffer[buffsize];
   FILE *dfile;
 
   dfile = fopen(filename, "r");
