@@ -12,8 +12,8 @@
 
 #define BUF_SIZE 0x10
 #define MAX_DEVICES 1
-#define SPEC_FILE "/home/cpeck1/workspace/tempmon3/tempmon/client/product.json"
-#define READINGS_FILE "/home/cpeck1/workspace/tempmon3/tempmon/client/lastread.json"
+#define SPEC_FILE "product.json"
+#define READINGS_FILE "lastread.json"
 
 void show_user_options()
 {
