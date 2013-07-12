@@ -1,8 +1,9 @@
-#ifndef MAIN_FN
-#define MAIN_FN
+#ifndef __MAIN_FN
+#define __MAIN_FN
 
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "fparse.h"
 #include "devtypes.h"
@@ -16,13 +17,7 @@
 #define READINGS_FILE "lastread.json"
 
 int main(void)
-{
- // if (geteuid() != 0) {
-  //  puts("\nProgram must be executed with root privileges.");
-   // puts("Re-run using: \"sudo ./(executable)\"");
-   // return 1;
- // }
-  
+{ 
   char *freezer_num = NULL;
   char *specifications_url = NULL;
   char *auth_user = NULL;
@@ -32,6 +27,11 @@ int main(void)
   char *upload_url_root;
   int product_id;
   int vendor_id;
+
+  time_t tlast;
+  time_t tnow;
+
+  char *prev_status = "FIRST_WRITE_OK?";
 
   int err;
   int looping;
@@ -44,6 +44,8 @@ int main(void)
   SEM710_READINGS readings;
   /* CONFIG_DATA cal; */
 
+  time(&tlast);
+  time(&tnow);
 
   ftHandle = ftdi_new();
 
@@ -57,10 +59,7 @@ int main(void)
   looping = 1;
   while (looping) {
     usleep(500000);
-    /* if (get_specifications(SPEC_FILE, &freezer_num, &specifications_url, */
-    /* 			   &auth_user, &auth_pwd)) { */
-    /*   continue; */
-    /* } */
+    time(&tnow);
     /************************/
     /* 1: Connect to server */
     /************************/
@@ -96,33 +95,20 @@ int main(void)
 
     /* printf("Device prepared.\n"); */
     read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
+    get_readings(&readings, inc_buf, read_bytes);
     ftdi_usb_close(ftHandle);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
       continue;
     }
-    else {
-      get_readings(&readings, inc_buf, read_bytes);
+    else if ((difftime(tnow, tlast)/60) > read_frequency ||
+	     (prev_status != readings.STATUS)){
       /* display_readings(&readings); */
       pack_readings(&readings, READINGS_FILE);
       do_web_put(upload_url_root, READINGS_FILE, auth_user, auth_pwd);
+      time(&tlast);
     }
-    /* case 2:  /\* read config *\/ */
-    /*   read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_CONFIG, inc_buf); */
-    /*   if (read_bytes <= 0) { */
-    /* 	printf("Read calibration failure.\n"); */
-    /* 	looping = 0; */
-    /*   } */
-    /*   else { */
-    /*     get_config(&cal, inc_buf, read_bytes); */
-    /* 	display_config(&cal); */
-    /*   } */
-    /*   break; */
-    /* default: */
-    /*   printf("Selection invalid.\n"); */
-    /*   break; */
-    /* } */
-
+    prev_status = readings.STATUS;
   }
   /****************************/
   /* 4: read data from SEM710 */
