@@ -139,6 +139,8 @@ typedef struct {
 
 uint8_t get_confirmation_byte(SEM_COMMANDS c);
 
+char *get_device_read_status(uint8_t *byte_array);
+
 void get_readings(SEM710_READINGS *readings, uint8_t *byte_array,
 		  int array_len);
 
