@@ -36,11 +36,11 @@ int get_specifications(char *filename, char **freezer_num,
   fseek(dfile, 0L, SEEK_END);
   filesize = ftell(dfile);
   fseek(dfile, 0L, SEEK_SET);
-
+    
   if (filesize < buffsize) {
     get_file(dfile, fbuffer);
     fclose(dfile);
- 
+
     root = cJSON_Parse(fbuffer);
     specifications = cJSON_GetObjectItem(root, "specifications");
     if (specifications != NULL) {
@@ -65,7 +65,6 @@ int get_specifications(char *filename, char **freezer_num,
       } else { return -1; }
     }
     else {
-      puts("Dafuq?");
       return -1;
     }
     return 0;

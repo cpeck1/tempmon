@@ -123,6 +123,7 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
     }
 
     curl_easy_cleanup(curl);
+    fclose(file);
   }
 }
 
