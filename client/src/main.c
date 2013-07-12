@@ -15,31 +15,6 @@
 #define SPEC_FILE "product.json"
 #define READINGS_FILE "lastread.json"
 
-void show_user_options()
-{
-  printf("\nPlease enter number corresponding to selection.\n");
-  printf("0: Exit\n");
-  printf("1: Get temperature reading\n");
-  printf("2: Read device config\n");
-}
-
-int get_user_selection()
-{
-  char text[20];
-  fputs("Enter selection: ", stdout);
-  fflush(stdout);
-  if ( fgets(text, sizeof text, stdin) )
-    {
-      int number;
-      if ( sscanf(text, "%d", &number) == 1 )
-	{
-	  return number;
-	}
-    }
-  return 0;
-}
-
-
 int main(void)
 {
   if (geteuid() != 0) {
@@ -119,7 +94,7 @@ int main(void)
       continue;
     }
 
-    printf("Device prepared.\n");
+    /* printf("Device prepared.\n"); */
     read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
     ftdi_usb_close(ftHandle);
     if (read_bytes <= 0) {
@@ -128,7 +103,7 @@ int main(void)
     }
     else {
       get_readings(&readings, inc_buf, read_bytes);
-      display_readings(&readings);
+      /* display_readings(&readings); */
       pack_readings(&readings, READINGS_FILE);
       do_web_put(upload_url_root, READINGS_FILE, auth_user, auth_pwd);
     }

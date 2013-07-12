@@ -90,7 +90,7 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
   curl = curl_easy_init();
   if (curl) {
     /* we want to use our own read function */
-    curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+    /* curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback); */
 
     slist = curl_slist_append(slist, "Content-Type: application/json");
     /* slist = curl_slist_append(slist, "cpeck1:radar"); */

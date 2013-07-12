@@ -58,8 +58,8 @@ int crc_pass(uint8_t *rx_data, int rx_pointer)
   rx_crc = (((uint16_t) rx_data[rx_pointer]) << 8) + 
     ((uint16_t) rx_data[rx_pointer - 1]);
 
-  printf("Calculated crc: %d\n", calculated_crc);
-  printf("Received crc: %d\n", rx_crc);
+  /* printf("Calculated crc: %d\n", calculated_crc); */
+  /* printf("Received crc: %d\n", rx_crc); */
 
   return (calculated_crc == rx_crc);
 }
@@ -304,7 +304,7 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
       might add more security later, but the readings transmitted always seem
       correct despite the CRC invalidation...
     */
-    printf("Warning: CRC invalid.\n");
+    /* printf("Warning: CRC invalid.\n"); */
   }
   return received;
 }
