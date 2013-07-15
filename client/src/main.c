@@ -23,10 +23,14 @@ int main(void)
   char *auth_user = NULL;
   char *auth_pwd = NULL;
 
+  cJSON *webroot;
+
   float read_frequency;
-  char *upload_url_root;
+  char *upload_url_root = "";
   int product_id;
   int vendor_id;
+
+  char upload_url[100];
 
   time_t tlast;
   time_t tnow;
@@ -36,40 +40,44 @@ int main(void)
   int err;
   int looping;
 
-  struct ftdi_context *ftHandle;
+  struct ftdi_context *ftHandle = NULL;
 
   int read_bytes;
   uint8_t inc_buf[280];
 
   SEM710_READINGS readings;
-  /* CONFIG_DATA cal; */
 
   time(&tlast);
   time(&tnow);
 
   ftHandle = ftdi_new();
+  ftdi_init(ftHandle);
 
   curl_global_init(CURL_GLOBAL_ALL);
+
   if (get_specifications("product.json", &freezer_num, &specifications_url,
   			 &auth_user, &auth_pwd)) {
     puts("Failed to fetch specifications from file. Exiting...");
     return 1;
   }
 
-  looping = 1;
-  while (looping) {
+  while (1) {
     usleep(500000);
     time(&tnow);
     /************************/
     /* 1: Connect to server */
     /************************/
-    if (get_runtime_specifications(specifications_url, auth_user, auth_pwd,
-				   &read_frequency, &upload_url_root,
-				   &product_id, &vendor_id)) {
+    if ((webroot = get_runtime_specifications(specifications_url, auth_user, 
+					      auth_pwd, &read_frequency, 
+					      &upload_url_root, &product_id, 
+					      &vendor_id)) == NULL) {
       puts("Failed to fetch runtime specifications from server. Retrying...");
       continue;
     }
     strcat(upload_url_root, freezer_num);
+    strcpy(upload_url, upload_url_root);
+
+    cJSON_Delete(webroot);
 
     /*************************/
     /* 2: Open SEM710 device */
@@ -81,7 +89,7 @@ int main(void)
       continue; 
     }
 
-    err = open_device(ftHandle, vendor_id, product_id);
+    err = ftdi_usb_open(ftHandle, vendor_id, product_id);
     if (err) { 
       printf("Error opening device.\n");
       continue; 
@@ -93,19 +101,22 @@ int main(void)
       continue;
     }
 
-    /* printf("Device prepared.\n"); */
     read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
-    get_readings(&readings, inc_buf, read_bytes);
     ftdi_usb_close(ftHandle);
+
+    get_readings(&readings, inc_buf, read_bytes);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
       continue;
     }
     else if ((difftime(tnow, tlast)/60) > read_frequency ||
-	     (prev_status != readings.STATUS)){
-      /* display_readings(&readings); */
+	     (prev_status != readings.STATUS)) {
+      /*
+	if the time since the last read is greater than the required wait time,
+	or if the status has changed since the last read, update.
+      */
       pack_readings(&readings, READINGS_FILE);
-      do_web_put(upload_url_root, READINGS_FILE, auth_user, auth_pwd);
+      do_web_put(upload_url, READINGS_FILE, auth_user, auth_pwd);
       time(&tlast);
     }
     prev_status = readings.STATUS;
@@ -124,6 +135,7 @@ int main(void)
 
   /* 6: close device */
 
+  ftdi_deinit(ftHandle);
   ftdi_free(ftHandle);
   return 0;
 }
