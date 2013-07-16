@@ -12,6 +12,8 @@ class Specifications(models.Model):
     read_frequency = models.FloatField()
     product_id = models.IntegerField()
     vendor_id = models.IntegerField()
+    expected_temperature = models.FloatField()
+    safe_temperature_range = models.FloatField()
     
     class Meta:
         ordering = ('name', 'read_frequency',)

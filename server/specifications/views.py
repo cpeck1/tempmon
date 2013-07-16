@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 
 class SpecificationsDetail(APIView):
     '''
-    List specifications. There is only one specification object.
+    Operational specifications for the SEM710 units.
     '''
     def get_specifications(self):
         try:
@@ -18,8 +18,8 @@ class SpecificationsDetail(APIView):
 
     #permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, format=None):
-        specifications = Specifications.objects.all()
-        serializer = SpecificationsSerializer(specifications, many=True)
+        specifications = self.get_specifications()
+        serializer = SpecificationsSerializer(specifications)
         return Response(serializer.data)
 
     def post(self, request, format=None):

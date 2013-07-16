@@ -19,10 +19,7 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   size_t retcode;
-  curl_off_t nread;
-
   retcode = fread(ptr, size, nmemb, stream);
-  nread = (curl_off_t)retcode;
  
   return retcode;
 }
@@ -126,9 +123,17 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
 }
 
 cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
-				 float *wait_duration, char **upload_url, 
-				 int *product_id, int *vendor_id)
+				  float *wait_duration, char **upload_url, 
+				  int *product_id, int *vendor_id,
+				  float *expected_temperature, 
+				  float *safe_temperature_range)
 {
+  /*
+    This is all in one function to prevent a memory leak which happened when
+    splitting it up, due to restrictions on passing fixed sized char buffers to
+    functions
+  */
+    
   cJSON *webroot = NULL;
   cJSON *webspecs = NULL;
 
@@ -173,8 +178,8 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
       fetch object items from roots
     */
     strcpy(json_content, "{\"specifications\":");
-    strncat(json_content, buffer+1, strlen(buffer)-2);
-    strcat(json_content, "}");
+    strncat(json_content, buffer, strlen(buffer)-1);
+    strcat(json_content, "} }");
 
     webroot = cJSON_Parse(json_content);
     if (webroot != NULL) {
@@ -199,6 +204,16 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
 	ob = cJSON_GetObjectItem(webspecs, "vendor_id");
 	if (ob != NULL) {
 	  *vendor_id = ob->valueint;
+	} else { return NULL; }
+
+	ob = cJSON_GetObjectItem(webspecs, "expected_temperature");
+	if (ob != NULL) {
+	  *expected_temperature = ob->valuedouble;
+	} else { return NULL; }
+
+	ob = cJSON_GetObjectItem(webspecs, "safe_temperature_range");
+	if (ob != NULL) {
+	  *safe_temperature_range = ob->valuedouble;
 	} else { return NULL; }
 
 	return webroot;

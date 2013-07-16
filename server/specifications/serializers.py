@@ -11,6 +11,8 @@ class SpecificationsSerializer(serializers.Serializer):
     read_frequency = serializers.FloatField()
     product_id = serializers.IntegerField()
     vendor_id = serializers.IntegerField()
+    expected_temperature = serializers.FloatField()
+    safe_temperature_range = serializers.FloatField()
 
     def restore_object(self, attrs, instance=None):
         if instance:
@@ -20,5 +22,11 @@ class SpecificationsSerializer(serializers.Serializer):
                                                 instance.read_frequency)
             instance.product_id = attrs.get('product_id', instance.product_id)
             instance.vendor_id = attrs.get('vendor_id', instance.vendor_id) 
+            instance.expected_temperature = attrs.get('expected_temperature', 
+                                           instance.expected_temperature) 
+
+            instance.safe_temperature_range = attrs.get(
+                'safe_temperature_range', instance.safe_temperature_range)
+
             return instance
         return Specifications(**attrs)

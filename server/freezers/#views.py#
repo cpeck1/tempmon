@@ -6,12 +6,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions, authentication
 from django.contrib.auth.models import User
+from csvwrite import write_update
 
 class FreezerList(APIView):
     '''
-    List all freezers, or create a new freezer.    '''
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-
+    List all freezers, or create a new freezer.
+    '''
+    #permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, format=None):
         freezers = Freezer.objects.all()
         serializer = FreezerSerializer(freezers, many=True)
@@ -28,7 +29,7 @@ class FreezerDetail(APIView):
     '''
     Retrieve, update, or delete a freezer instance.
     '''
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    #permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self, pk):
         try:
@@ -44,6 +45,7 @@ class FreezerDetail(APIView):
     def put(self, request, pk, format=None):
         freezer = self.get_object(pk)
         serializer = FreezerSerializer(freezer, data=request.DATA)
+        write_update(freezer)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

@@ -29,6 +29,8 @@ int main(void)
   char *upload_url_root = "";
   int product_id;
   int vendor_id;
+  float expected_temperature;
+  float safe_temperature_range;
 
   char upload_url[100];
 
@@ -38,7 +40,6 @@ int main(void)
   char *prev_status = "FIRST_WRITE_OK?";
 
   int err;
-  int looping;
 
   struct ftdi_context *ftHandle = NULL;
 
@@ -70,14 +71,18 @@ int main(void)
     if ((webroot = get_runtime_specifications(specifications_url, auth_user, 
 					      auth_pwd, &read_frequency, 
 					      &upload_url_root, &product_id, 
-					      &vendor_id)) == NULL) {
+					      &vendor_id, &expected_temperature,
+					      &safe_temperature_range)) == NULL)
+    {
       puts("Failed to fetch runtime specifications from server. Retrying...");
       continue;
     }
-    strcat(upload_url_root, freezer_num);
-    strcpy(upload_url, upload_url_root);
+    else {
+      strcat(upload_url_root, freezer_num);
+      strcpy(upload_url, upload_url_root);
 
-    cJSON_Delete(webroot);
+      cJSON_Delete(webroot);
+    }
 
     /*************************/
     /* 2: Open SEM710 device */
@@ -101,9 +106,15 @@ int main(void)
       continue;
     }
 
+    /****************************/
+    /* 4: read data from SEM710 */
+    /****************************/
     read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
     ftdi_usb_close(ftHandle);
 
+    /********************************/
+    /* 5. Communication with server */
+    /********************************/
     get_readings(&readings, inc_buf, read_bytes);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
@@ -121,17 +132,6 @@ int main(void)
     }
     prev_status = readings.STATUS;
   }
-  /****************************/
-  /* 4: read data from SEM710 */
-  /****************************/
-
-  /* 4.5: transmit data from SEM710 */
-
-  /****************************************/
-  /* Communication to server unimplemented*/
-  /****************************************/
-
-  /* 5: purge buffer; await further instructions */
 
   /* 6: close device */
 
