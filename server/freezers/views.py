@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions, authentication
 from django.contrib.auth.models import User
-from csvwrite import write_update
+from freezers.csvwrite import write_update
+from freezers.validatestatus import validate_status
 
 class FreezerList(APIView):
     '''
@@ -46,8 +47,9 @@ class FreezerDetail(APIView):
         freezer = self.get_object(pk)
         serializer = FreezerSerializer(freezer, data=request.DATA)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save() 
             write_update(freezer) 
+            validate_status(freezer)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

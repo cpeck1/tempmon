@@ -4,8 +4,29 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
+    ("Connor", "cpeck1@ualberta.ca"),
     # ('Your Name', 'your_email@example.com'),
 )
+
+SERVER_EMAIL = 'cbsrtempmon@gmail.com'
+SERVER_EMAIL_PW = 'AttackOfTheDogs'
+SERVER_EMAIL_SMTP_SERVER = 'smtp.gmail.com'
+SERVER_EMAIL_SMTP_PORT = 587
+
+SERVER_EMAIL_SUBJECT_TEMPLATE =\
+"""Freezer #%d has reported an error/warning."""
+
+SERVER_EMAIL_BODY_TEMPLATE =\
+"""You have received this message because you are
+on the admin
+list for CBSR's temperature monitoring system. <br>
+<br>
+Freezer #%d has reported the following error/warning:<br>
+<br>
+>>>%s<br>
+<br>
+and recorded a temperature of: %f.
+"""
 
 MANAGERS = ADMINS
 
@@ -23,7 +44,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
