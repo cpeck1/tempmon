@@ -64,7 +64,6 @@ int main(void)
 
   while (1) {
     usleep(500000);
-    time(&tnow);
     /************************/
     /* 1: Connect to server */
     /************************/
@@ -80,6 +79,8 @@ int main(void)
     else {
       strcat(upload_url_root, freezer_num);
       strcpy(upload_url, upload_url_root);
+
+      read_frequency = read_frequency - 0.066666; 
 
       cJSON_Delete(webroot);
     }
@@ -115,7 +116,9 @@ int main(void)
     /********************************/
     /* 5. Communication with server */
     /********************************/
-    get_readings(&readings, inc_buf, read_bytes);
+    time(&tnow);
+    get_readings(&readings, expected_temperature, safe_temperature_range,
+		 inc_buf, read_bytes);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
       continue;
