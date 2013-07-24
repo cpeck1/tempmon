@@ -17,15 +17,16 @@ SERVER_EMAIL_SUBJECT_TEMPLATE =\
 """Freezer #%d has reported an error/warning."""
 
 SERVER_EMAIL_BODY_TEMPLATE =\
-"""You have received this message because you are
-on the admin
-list for CBSR's temperature monitoring system. <br>
+"""You have received this message because you are on the admin list for CBSR's 
+temperature monitoring system. <br>
 <br>
 Freezer #%d has reported the following error/warning:<br>
 <br>
 >>>%s<br>
 <br>
-and recorded a temperature of: %f.
+and recorded a temperature of: %f <br>
+<br>
+This error was recorded at: %s.
 """
 
 MANAGERS = ADMINS

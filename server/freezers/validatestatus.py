@@ -21,7 +21,8 @@ def validate_status(Freezer):
         subject = SERVER_EMAIL_SUBJECT_TEMPLATE % Freezer.id
         
         body = SERVER_EMAIL_BODY_TEMPLATE
-        body = body % (Freezer.id, Freezer.status, Freezer.temperature)
+        body = body % (Freezer.id, Freezer.status, Freezer.temperature,
+                       Freezer.last_updated)
         body = "" + body + ""
         session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         session.ehlo()

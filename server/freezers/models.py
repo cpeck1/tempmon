@@ -11,4 +11,4 @@ class Freezer(models.Model):
     last_updated = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ('temperature', 'status',)
+        ordering = ('pk', )

@@ -7,6 +7,10 @@
 #include <string.h>
 #include "cJSON.h"
 
+#define CERT_PATH "~/workspace/tempmon3/tempmon/client/ssl/rpi@localhost.crt"
+#define KEY_PATH "~/workspace/tempmon3/tempmon/client/ssl/rpi@localhost.key"
+#define CA_CERT_PATH "/home/cpeck1/workspace/tempmon3/tempmon/client/ssl/tempmonCA.crt"
+
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   char **response_ptr = (char **) stream;
@@ -23,47 +27,6 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
  
   return retcode;
 }
-
-/* char *do_web_get(char *url, char *buffer[1024], char *user, char *pwd) */
-/* { */
-/*   /\* keeps the handle to the curl object *\/ */
-/*   CURL *curl_handle = NULL; */
-/*   /\* to keep the response *\/ */
-/*   char *response; */
-
-/*   /\* initializing curl and setting the url *\/ */
-/*   curl_handle = curl_easy_init(); */
-/*   if (curl_handle) { */
-/*     curl_easy_setopt(curl_handle, CURLOPT_URL, url); */
-/*     curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1); */
-
-/*     curl_easy_setopt(curl_handle, CURLOPT_USERNAME, user); */
-/*     curl_easy_setopt(curl_handle, CURLOPT_PASSWORD, pwd); */
-
-/*     /\* follow locations specified by the response header *\/ */
-/*     curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); */
-
-/*     /\* setting a callback function to return the data *\/ */
-/*     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback); */
-    
-/*     /\* passing the pointer to the response as the callback parameter *\/ */
-/*     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &response); */
-
-/*     /\* perform the request *\/ */
-/*     curl_easy_perform(curl_handle); */
-
-/*     /\* cleaning all curl stuff *\/ */
-/*     curl_easy_cleanup(curl_handle); */
-
-/*     strncpy(*buffer, response, sizeof(response)); */
-/*     free(response); */
-
-/*     return 1; */
-/*   } */
-/*   else { */
-/*     return 0; */
-/*   } */
-/* } */
 
 void do_web_put(char *url, char *filename, char *user, char *pwd)
 {
@@ -100,6 +63,12 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
 
     /* now specify which file to upload */
     curl_easy_setopt(curl, CURLOPT_READDATA, file);
+
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERT_PATH);
+
+    curl_easy_setopt(curl, CURLOPT_SSLKEY, KEY_PATH);
 
     curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
@@ -140,35 +109,40 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
   cJSON *ob = NULL;
 
   /* keeps the handle to the curl object */
-  CURL *curl_handle = NULL;
+  CURL *curl = NULL;
   char buffer[1024];
   char *response;
 
   char json_content[1024];
 
-  curl_handle = curl_easy_init();
-  if (curl_handle) {
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+  int ret;
 
-    curl_easy_setopt(curl_handle, CURLOPT_USERNAME, user);
-    curl_easy_setopt(curl_handle, CURLOPT_PASSWORD, pwd);
+  curl = curl_easy_init();
+  if (curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+    curl_easy_setopt(curl, CURLOPT_USERNAME, user);
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
+
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERT_PATH);
 
     /* follow locations specified by the response header */
-    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     /* setting a callback function to return the data */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
-    
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     /* passing the pointer to the response as the callback parameter */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
     /* perform the request */
-    curl_easy_perform(curl_handle);
-
+    ret = curl_easy_perform(curl);
+    if (ret != CURLE_OK && ret != CURLE_WRITE_ERROR) {
+      printf("Error code: %d\n", ret);
+      curl_easy_cleanup(curl);
+      return NULL;
+    }
     /* cleaning all curl stuff */
-    curl_easy_cleanup(curl_handle);
-    
+    curl_easy_cleanup(curl); 
     strcpy(buffer, response);
     free(response);
   }
