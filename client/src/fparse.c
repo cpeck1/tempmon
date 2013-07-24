@@ -18,13 +18,10 @@ void get_file(FILE *f, char *buffer)
   }
 }
 
-int get_specifications(char *filename, char **freezer_num, 
-		       char **specifications_url, char **auth_user,
-		       char **auth_pwd)
+cJSON *get_specifications(char *filename)
 {
   cJSON *root;
   cJSON *specifications = NULL;
-  cJSON *ob = NULL;
 
   int filesize;
   int buffsize = 1024;
@@ -44,29 +41,8 @@ int get_specifications(char *filename, char **freezer_num,
     root = cJSON_Parse(fbuffer);
     specifications = cJSON_GetObjectItem(root, "specifications");
     if (specifications != NULL) {
-      ob = cJSON_GetObjectItem(specifications, "freezer_num");
-      if (ob != NULL) {
-	*freezer_num = ob->valuestring;
-      } else { return -1; }
-
-      ob = cJSON_GetObjectItem(specifications, "url");
-      if (ob != NULL) {
-	*specifications_url = ob->valuestring;
-      } else { return -1; }
-
-      ob = cJSON_GetObjectItem(specifications, "user");
-      if (ob != NULL) {
-	*auth_user = ob->valuestring;
-      } else { return -1; }
-
-      ob = cJSON_GetObjectItem(specifications, "pwd");
-      if (ob != NULL) {
-	*auth_pwd = ob->valuestring;
-      } else { return -1; }
+      return specifications;
     }
-    else {
-      return -1;
-    } 
   }
-  return 0;
+  return NULL;
 }

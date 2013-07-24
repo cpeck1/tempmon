@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "cJSON.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,9 +15,7 @@ extern "C" {
 
   void get_file(FILE *f, char *buffer);
 
-  int get_specifications(char *filename, char **freezer_num, 
-		       char **specifications_url, char **auth_usr,
-			 char **auth_pwd);
+  cJSON *get_specifications(char *filename);
 #ifdef __cplusplus
 }
 #endif

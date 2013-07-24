@@ -12,13 +12,11 @@ extern "C" {
 size_t write_callback_func(void *buffer, size_t size,
 			   size_t nmemb, void *userp);
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
-char *do_web_put(char *url, char *to_put, char *user, char *pwd);
+char *do_web_put(char *url, char *to_put, char *user, char *pwd, 
+		 char *ca_path);
 
-cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
-				  float *wait_duration, char **upload_url, 
-				  int *product_id, int *vendor_id, 
-				  float *expected_temperature,
-				  float *safe_temperature_range);
+cJSON *get_runtime_specifications(char *url, char *user, char *pwd, 
+				  char *ca_path);
 #ifdef __cplusplus
 }
 #endif

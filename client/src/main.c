@@ -11,19 +11,23 @@
 #include "http-operations.h"
 #include "cJSON.h"
 
-#define BUF_SIZE 0x10
-#define MAX_DEVICES 1
-#define SPEC_FILE "product.json"
+#define GLOBAL_FILE "globals.json"
 #define READINGS_FILE "lastread.json"
 
 int main(void)
 { 
+  cJSON *froot;
+  cJSON *fob;
+
   char *freezer_num = NULL;
   char *specifications_url = NULL;
   char *auth_user = NULL;
   char *auth_pwd = NULL;
+  char *ca_path = NULL;
 
   cJSON *webroot;
+  cJSON *webspecs;
+  cJSON *ob;
 
   float read_frequency;
   char *upload_url_root = "";
@@ -56,10 +60,35 @@ int main(void)
 
   curl_global_init(CURL_GLOBAL_ALL);
 
-  if (get_specifications("product.json", &freezer_num, &specifications_url,
-  			 &auth_user, &auth_pwd)) {
+  if ((froot = get_specifications(GLOBAL_FILE)) == NULL) {
     puts("Failed to fetch specifications from file. Exiting...");
     return 1;
+  }
+  else {
+      fob = cJSON_GetObjectItem(froot, "freezer_num");
+      if (fob != NULL) {
+	freezer_num = fob->valuestring;
+      } else { return 1; }
+
+      fob = cJSON_GetObjectItem(froot, "url");
+      if (fob != NULL) {
+	specifications_url = fob->valuestring;
+      } else { return 1; }
+
+      fob = cJSON_GetObjectItem(froot, "user");
+      if (fob != NULL) {
+	auth_user = fob->valuestring;
+      } else { return 1; }
+
+      fob = cJSON_GetObjectItem(froot, "pwd");
+      if (fob != NULL) {
+	auth_pwd = fob->valuestring;
+      } else { return 1; }
+
+      fob = cJSON_GetObjectItem(froot, "ca_path");
+      if (fob != NULL) {
+	ca_path = fob->valuestring;
+      } else { return 1;}
   }
 
   while (1) {
@@ -67,16 +96,45 @@ int main(void)
     /************************/
     /* 1: Connect to server */
     /************************/
-    if ((webroot = get_runtime_specifications(specifications_url, auth_user, 
-					      auth_pwd, &read_frequency, 
-					      &upload_url_root, &product_id, 
-					      &vendor_id, &expected_temperature,
-					      &safe_temperature_range)) == NULL)
-    {
+    if ((webroot = get_runtime_specifications(specifications_url, auth_user,
+					      auth_pwd, ca_path)) == NULL) {
       puts("Failed to fetch runtime specifications from server. Retrying...");
       continue;
     }
     else {
+      webspecs = cJSON_GetObjectItem(webroot, "specifications");
+      if (webspecs != NULL) {
+	ob = cJSON_GetObjectItem(webspecs, "read_frequency");
+	if (ob != NULL) {
+	  read_frequency = ob->valuedouble;
+	} else { continue; }
+
+	ob = cJSON_GetObjectItem(webspecs, "upload_url_root");
+	if (ob != NULL) {
+	  upload_url_root = ob->valuestring;
+	} else { continue; }
+
+	ob = cJSON_GetObjectItem(webspecs, "product_id");
+	if (ob != NULL) {
+	  product_id = ob->valueint;
+	} else { continue; }
+
+	ob = cJSON_GetObjectItem(webspecs, "vendor_id");
+	if (ob != NULL) {
+	  vendor_id = ob->valueint;
+	} else { continue; }
+
+	ob = cJSON_GetObjectItem(webspecs, "expected_temperature");
+	if (ob != NULL) {
+	  expected_temperature = ob->valuedouble;
+	} else { continue; }
+
+	ob = cJSON_GetObjectItem(webspecs, "safe_temperature_range");
+	if (ob != NULL) {
+	  safe_temperature_range = ob->valuedouble;
+	} else { continue; }
+      }
+
       strcat(upload_url_root, freezer_num);
       strcpy(upload_url, upload_url_root);
 
@@ -112,32 +170,32 @@ int main(void)
     /****************************/
     read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
     ftdi_usb_close(ftHandle);
+    if (read_bytes <= 0) {
+      printf("Read process failure.\n");
+      continue;
+    }
+    get_readings(&readings, expected_temperature, safe_temperature_range,
+		 inc_buf, read_bytes);
 
     /********************************/
     /* 5. Communication with server */
     /********************************/
     time(&tnow);
-    get_readings(&readings, expected_temperature, safe_temperature_range,
-		 inc_buf, read_bytes);
-    if (read_bytes <= 0) {
-      printf("Read process failure.\n");
-      continue;
-    }
-    else if ((difftime(tnow, tlast)/60) > read_frequency ||
-	     (prev_status != readings.STATUS)) {
+    if (((difftime(tnow, tlast)/60) > read_frequency ||
+	 (prev_status != readings.STATUS)) && read_bytes > 0) {
       /*
 	if the time since the last read is greater than the required wait time,
 	or if the status has changed since the last read, update.
       */
       pack_readings(&readings, READINGS_FILE);
-      do_web_put(upload_url, READINGS_FILE, auth_user, auth_pwd);
+      do_web_put(upload_url, READINGS_FILE, auth_user, auth_pwd, ca_path);
       time(&tlast);
     }
     prev_status = readings.STATUS;
   }
 
   /* 6: close device */
-
+  cJSON_Delete(froot);
   ftdi_deinit(ftHandle);
   ftdi_free(ftHandle);
   return 0;

@@ -7,10 +7,6 @@
 #include <string.h>
 #include "cJSON.h"
 
-#define CERT_PATH "~/workspace/tempmon3/tempmon/client/ssl/rpi@localhost.crt"
-#define KEY_PATH "~/workspace/tempmon3/tempmon/client/ssl/rpi@localhost.key"
-#define CA_CERT_PATH "/home/cpeck1/workspace/tempmon3/tempmon/client/ssl/tempmonCA.crt"
-
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   char **response_ptr = (char **) stream;
@@ -28,7 +24,7 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-void do_web_put(char *url, char *filename, char *user, char *pwd)
+void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
 {
   CURL *curl;
   CURLcode res;
@@ -66,9 +62,7 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERT_PATH);
-
-    curl_easy_setopt(curl, CURLOPT_SSLKEY, KEY_PATH);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
 
     curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
@@ -91,11 +85,8 @@ void do_web_put(char *url, char *filename, char *user, char *pwd)
   }
 }
 
-cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
-				  float *wait_duration, char **upload_url, 
-				  int *product_id, int *vendor_id,
-				  float *expected_temperature, 
-				  float *safe_temperature_range)
+cJSON *get_runtime_specifications(char *url, char *user, char *pwd, 
+				  char *ca_path)
 {
   /*
     This is all in one function to prevent a memory leak which happened when
@@ -104,9 +95,6 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
   */
     
   cJSON *webroot = NULL;
-  cJSON *webspecs = NULL;
-
-  cJSON *ob = NULL;
 
   /* keeps the handle to the curl object */
   CURL *curl = NULL;
@@ -125,7 +113,7 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
     curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERT_PATH);
+    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
 
     /* follow locations specified by the response header */
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -157,41 +145,7 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
 
     webroot = cJSON_Parse(json_content);
     if (webroot != NULL) {
-      webspecs = cJSON_GetObjectItem(webroot, "specifications");
-      if (webspecs != NULL) {
-	ob = cJSON_GetObjectItem(webspecs, "read_frequency");
-	if (ob != NULL) {
-	  *wait_duration = ob->valuedouble;
-	} else { return NULL; }
-
-	ob = cJSON_GetObjectItem(webspecs, "upload_url_root");
-	if (ob != NULL) {
-	  *upload_url = ob->valuestring;
-	  /* strncpy(*upload_url, ob->valuestring, sizeof(*upload_url)); */
-	} else { return NULL; }
-
-	ob = cJSON_GetObjectItem(webspecs, "product_id");
-	if (ob != NULL) {
-	  *product_id = ob->valueint;
-	} else { return NULL; }
-
-	ob = cJSON_GetObjectItem(webspecs, "vendor_id");
-	if (ob != NULL) {
-	  *vendor_id = ob->valueint;
-	} else { return NULL; }
-
-	ob = cJSON_GetObjectItem(webspecs, "expected_temperature");
-	if (ob != NULL) {
-	  *expected_temperature = ob->valuedouble;
-	} else { return NULL; }
-
-	ob = cJSON_GetObjectItem(webspecs, "safe_temperature_range");
-	if (ob != NULL) {
-	  *safe_temperature_range = ob->valuedouble;
-	} else { return NULL; }
-
-	return webroot;
-      }
+      return webroot;
     }
   }
   return NULL;
