@@ -15,7 +15,7 @@ extern "C" {
 
   void get_file(FILE *f, char *buffer);
 
-  cJSON *get_specifications(char *filename);
+  cJSON *get_cjson_object_from_file(char *filename, char *obj_name);
 #ifdef __cplusplus
 }
 #endif

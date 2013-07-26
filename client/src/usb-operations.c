@@ -82,6 +82,7 @@ int detach_device_kernel(int vendor_id, int product_id)
   libusb_init(&context);
   libusb_set_debug(context, 3);
 
+  /* finds the first, as mentioned */
   handle = libusb_open_device_with_vid_pid(context, vendor_id, product_id);
   if (handle == NULL) {
     return -1;
@@ -103,7 +104,7 @@ int detach_device_kernel(int vendor_id, int product_id)
 int open_device(struct ftdi_context *ctx, int vendor_id, int product_id)
 {
   /*
-    use FTD2XX to open the device; this open device function simply opens the
+    use libftdi to open the device; this open device function simply opens the
     first device it finds with the given vendor and product id, and cannot
     differentiate between multiple devices with the same vID and pID
   */
@@ -123,10 +124,9 @@ int open_device(struct ftdi_context *ctx, int vendor_id, int product_id)
 
 int prepare_device(struct ftdi_context *ctx)
 {
-  /* struct ftdi_bits_type btype = BITS_8; */
-  /* struct ftdi_stop_bits_type sbits = STOP_BIT_1; */
-  /* struct ftdi_parity_type parity = NONE; */
-
+  /*
+    Ready the given device for reading/writing.
+  */
   int err = 0;
 
   err =  ftdi_usb_purge_rx_buffer(ctx);
@@ -300,11 +300,7 @@ int read_device(struct ftdi_context *ctx, int command, uint8_t *incoming_buff)
   }
 
   if (!crc_pass(incoming_buff, received - 2)) {
-    /*
-      might add more security later, but the readings transmitted always seem
-      correct despite the CRC invalidation...
-    */
-    /* printf("Warning: CRC invalid.\n"); */
+    /* do nothing for now  */
   }
   return received;
 }

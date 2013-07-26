@@ -8,6 +8,7 @@
 
 void get_file(FILE *f, char *buffer)
 {
+  /* Puts the entire contents of the given file into the given buffer */
   char line[256];
 
   if (fgets(line, 256, f)) {
@@ -18,10 +19,14 @@ void get_file(FILE *f, char *buffer)
   }
 }
 
-cJSON *get_specifications(char *filename)
+cJSON *get_cjson_object_from_file(char *filename, char *obj_name)
 {
+  /* 
+     returns the cJSON object stored as a string with the given name
+     in the file with the given filename. 
+  */
   cJSON *root;
-  cJSON *specifications = NULL;
+  cJSON *object = NULL;
 
   int filesize;
   int buffsize = 1024;
@@ -29,19 +34,23 @@ cJSON *get_specifications(char *filename)
   FILE *dfile;
 
   dfile = fopen(filename, "r");
-
-  fseek(dfile, 0L, SEEK_END);
-  filesize = ftell(dfile);
-  fseek(dfile, 0L, SEEK_SET);
+  if (dfile != NULL) {  /* We found a file with the given filename/path */
+    fseek(dfile, 0L, SEEK_END);
+    filesize = ftell(dfile);
+    fseek(dfile, 0L, SEEK_SET);
     
-  if (filesize < buffsize) {
-    get_file(dfile, fbuffer);
-    fclose(dfile);
+    if (filesize < buffsize) { 	/* will fit in a buffer of the size reserved */
+      get_file(dfile, fbuffer);
+      fclose(dfile);
 
-    root = cJSON_Parse(fbuffer);
-    specifications = cJSON_GetObjectItem(root, "specifications");
-    if (specifications != NULL) {
-      return specifications;
+      root = cJSON_Parse(fbuffer);
+      object = cJSON_GetObjectItem(root, obj_name);
+      if (object != NULL) {
+	return object;
+      }
+    }
+    else {
+      fclose(dfile);
     }
   }
   return NULL;

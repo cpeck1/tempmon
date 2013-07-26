@@ -8,15 +8,14 @@ from django.contrib.auth.models import User
 
 class SpecificationsDetail(APIView):
     '''
-    Operational specifications for the SEM710 units.
+    Operational specifications for the Raspberry Pi units.
     '''
     def get_specifications(self):
         try:
-            return Specifications.objects.get(name="specifications")
+            return Specifications.objects.get(pk=1)
         except Specifications.DoesNotExist:
             return Specifications(read_frequency = 100000.0)
 
-    #permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, format=None):
         specifications = self.get_specifications()
         serializer = SpecificationsSerializer(specifications)

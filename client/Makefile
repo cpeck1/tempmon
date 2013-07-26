@@ -27,6 +27,7 @@ TEST_SRCS := \
 	$(COMMON_SRCS) \
 	array_test.c \
 	fparse_test.c \
+	devtypes_test.c \
 	test_funcs.c \
 	test_main.c
 

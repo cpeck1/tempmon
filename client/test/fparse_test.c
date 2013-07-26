@@ -1,4 +1,5 @@
 #include "fparse.h"
+#include "cJSON.h"
 
 #include <stdio.h>
 
@@ -7,160 +8,69 @@
 
 #include <gtest/gtest.h>
 
-#define TEST_FILE "/home/cpeck1/workspace/tempmon/tempmon/client/tests/testfile.ini"
+#define fpath "/home/cpeck1/workspace/tempmon3/tempmon/client/test/testfile.json"
 
-TEST(fparse, get_char_index_0)
+TEST(fparse, fparse_test_0) 
 {
-  char *test;
-  int index;
-  
-  test = "a";
-  index = get_char_index(test, 'b');
+  cJSON *root;
 
-  EXPECT_EQ(index, -1);
+  char *fake_dir = "/path/to/fake/file.txt";
+
+  root = get_cjson_object_from_file(fake_dir, "fake object name");
+  EXPECT_EQ(NULL, root);
 }
 
-TEST(fparse, get_char_index_1)
+TEST(fparse, fparse_test_1) 
 {
-  char *test;
-  int index;
-  
-  test = "a";
-  index = get_char_index(test, 'a');
+  cJSON *root;
+  cJSON *ob;
 
-  EXPECT_EQ(index, 0);
+  char *test1 = NULL;
+
+  root = get_cjson_object_from_file(fpath, "test");
+  if (root != NULL) {
+    ob = cJSON_GetObjectItem(root, "test1");
+    if (ob != NULL) {
+      test1 = ob->valuestring;
+    }
+  }
+
+  ASSERT_STREQ("1", test1);
+  cJSON_Delete(root);
 }
 
-TEST(fparse, get_char_index_2)
+TEST(fparse, fparse_test_2) 
 {
-  char *test;
-  int index;
-  
-  test = "abcdefghijklmnopqrstuvwxyz";
-  index = get_char_index(test, 'z');
+  cJSON *root;
+  cJSON *ob;
 
-  EXPECT_EQ(index, 25);
+  char *test2 = NULL;
+
+  root = get_cjson_object_from_file(fpath, "test");
+  if (root != NULL) {
+    ob = cJSON_GetObjectItem(root, "test2");
+    if (ob != NULL) {
+      test2 = ob->valuestring;
+    }
+  }
+  ASSERT_STREQ("2", test2);
+  cJSON_Delete(root);
 }
 
-TEST(fparse, get_char_index_3)
+TEST(fparse, fparse_test_3) 
 {
-  char *test;
-  int index;
-  
-  test = "abcdefghijklmnopqrstuvwxyz";
-  index = get_char_index(test, 'a');
+  cJSON *root;
+  cJSON *ob;
 
-  EXPECT_EQ(index, 0);
-}
+  char *test3 = NULL;
 
-TEST(fparse, get_char_index_4)
-{
-  char *test;
-  int index;
-  
-  test = "abcdefghijklmnopqrstuvwxyz";
-  index = get_char_index(test, 'n');
-
-  EXPECT_EQ(index, 13);
-}
-
-TEST(fparse, get_spec_value_0)
-{
-  char *test;
-  int found;
-  char *val;
-
-  test = "This_val=blank";
-  found = get_spec_value(test, &val);
-  EXPECT_EQ(found, 0);
-}
-
-TEST(fparse, get_spec_value_1) 
-{
-  char *test;
-  int found;
-  char *val;
-
-  test = "\n";
-  found = get_spec_value(test, &val);
-
-  EXPECT_EQ(found, 0);
-}
-
-TEST(fparse, get_spec_value_2) 
-{
-  char *test;
-  char *val;
-  int rval;
-
-  test = "This_val=1\n";
-  
-  get_spec_value(test, &val);
-  rval = atoi(val);
-  EXPECT_EQ(rval, 1);
-}
-
-TEST(fparse, get_spec_value_3)
-{
-  char *test;
-  char *val;
-  int rval;
-
-  test = "This_val=35623\n";
-  get_spec_value(test, &val);
-  rval = atoi(val);
-  EXPECT_EQ(rval, 35623);
-}
-
-TEST(fparse, get_spec_0)
-{
-  FILE *f;
-
-  int found;
-  char *val;
-  f = fopen(TEST_FILE, "r");
-
-  found = get_spec(f, "fake_id", &val);
-  EXPECT_EQ(found, 0);
-}
-
-TEST(fparse, get_spec_1)
-{
-  FILE *f;
-
-  int found;
-  char *val;
-
-  f = fopen(TEST_FILE, "r");
-
-  found = get_spec(f, "faker_id", &val);
-
-  EXPECT_EQ(found, 0);
-}
-
-TEST(fparse, get_spec_2)
-{
-  FILE *f;
-  char *val;
-  int rval;
-
-  f = fopen(TEST_FILE, "r");
-  get_spec(f, "real_id", &val);
-  rval = atoi(val);
-
-  EXPECT_EQ(rval, 3);
-}
-
-TEST(fparse, get_spec_3)
-{
-  FILE *f;
-
-  char *val;
-  int rval;
-
-  f = fopen(TEST_FILE, "r");
-  get_spec(f, "realer_id", &val);
-  rval = atoi(val);
-
-  EXPECT_EQ(rval, 12345);
+  root = get_cjson_object_from_file(fpath, "test");
+  if (root != NULL) {
+    ob = cJSON_GetObjectItem(root, "test3");
+    if (ob != NULL) {
+      test3 = ob->valuestring;
+    }
+  }
+  ASSERT_STREQ("3", test3);
+  cJSON_Delete(root);
 }

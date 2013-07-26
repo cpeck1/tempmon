@@ -1,3 +1,4 @@
+
 from django.db import models
 from pygments.lexers import get_all_lexers
 from pygments.styles import get_all_styles
@@ -7,7 +8,6 @@ from pygments import highlight
 # Create your models here.
 
 class Specifications(models.Model):
-    name = models.TextField(default="specifications")
     upload_url_root = models.TextField()
     read_frequency = models.FloatField()
     product_id = models.IntegerField()

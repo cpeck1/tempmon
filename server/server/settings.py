@@ -1,6 +1,6 @@
 # Django settings for server project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -26,8 +26,8 @@ Freezer #%d has reported the following error/warning:<br>
 <br>
 and recorded a temperature of: %f <br>
 <br>
-This error was recorded at: %s.
-"""
+This error was recorded at: %s. 
+""" # [Freezer num], [Freezer status], [Freezer temperature], [Timestamp]
 
 MANAGERS = ADMINS
 
@@ -45,7 +45,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['localhost', "10.13.7.179"]
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name

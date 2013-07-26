@@ -6,7 +6,6 @@ from datetime import datetime
 from django.contrib.auth.models import User
 
 class SpecificationsSerializer(serializers.Serializer):
-    name = serializers.CharField(required=False, default="specifications")
     upload_url_root = serializers.CharField()
     read_frequency = serializers.FloatField()
     product_id = serializers.IntegerField()
@@ -27,6 +26,5 @@ class SpecificationsSerializer(serializers.Serializer):
 
             instance.safe_temperature_range = attrs.get(
                 'safe_temperature_range', instance.safe_temperature_range)
-
             return instance
         return Specifications(**attrs)

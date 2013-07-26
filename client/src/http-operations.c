@@ -11,7 +11,7 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   char **response_ptr = (char **) stream;
 
-  *response_ptr = strndup(ptr, (size_t) (size*nmemb));
+  *response_ptr = strndup((const char*) ptr, (size_t) (size*nmemb));
 
   return sizeof(*response_ptr);
 } 
@@ -19,13 +19,21 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   size_t retcode;
-  retcode = fread(ptr, size, nmemb, stream);
+  retcode = fread(ptr, size, nmemb, (FILE *)stream);
  
   return retcode;
 }
 
 void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
 {
+  /*
+    PUT the file with the given filename to the given url, using the given 
+    authentication credentials and certificate authority path (this assumes the
+    use of self-signed certificates). In the case that ca_path is NULL, 
+    this will still attempt to do the PUT anyway (for instance if the server is
+    not using SSL authentication). Currently only supports uploading cJSON 
+    filetypes.
+  */
   CURL *curl;
   CURLcode res;
   FILE *file;
@@ -41,28 +49,27 @@ void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
 
   curl = curl_easy_init();
   if (curl) {
-    /* we want to use our own read function */
-    /* curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback); */
-
+    /* supports uploads of cJSON file types */
     slist = curl_slist_append(slist, "Content-Type: application/json");
-    /* slist = curl_slist_append(slist, "cpeck1:radar"); */
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 
     /* enable uploading */
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
     
-    /* 
-       specify target URL, and note that this URL should include a file name,
-       not only a directory
-    */
+    /* specify target URL */
     curl_easy_setopt(curl, CURLOPT_URL, url);
 
     /* now specify which file to upload */
     curl_easy_setopt(curl, CURLOPT_READDATA, file);
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
+    if (ca_path != NULL) {
+      /* if using SSL */
+      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
+      curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
+
+      /* no host verification in place as we are using self-signed certs */
+      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0); 
+    }
 
     curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
@@ -89,9 +96,12 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
 				  char *ca_path)
 {
   /*
-    This is all in one function to prevent a memory leak which happened when
-    splitting it up, due to restrictions on passing fixed sized char buffers to
-    functions
+    GET from the given url a cJSON object using the given credentials and 
+    certificate authority. If ca_path is NULL, proceed with the GET request
+    anyway (for instance if the server is not using SSL authentication).
+
+    Generalized http GET caused memory leaks, returning a cJSON object was a
+    work-around.
   */
     
   cJSON *webroot = NULL;
@@ -100,7 +110,6 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
   CURL *curl = NULL;
   char buffer[1024];
   char *response;
-
   char json_content[1024];
 
   int ret;
@@ -109,11 +118,14 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+
     curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
-    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
+    if (ca_path != NULL) {
+      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
+      curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
+    }
 
     /* follow locations specified by the response header */
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);

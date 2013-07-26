@@ -78,23 +78,16 @@ uint8_t get_confirmation_byte(SEM_COMMANDS c) {
   }
   return 0;
 }
-
-char *get_device_read_status(uint8_t *byte_array, float temp_reading,
+/* (temp_exp - range) <= temp_reading <= (temp_exp + range) */
+char *get_device_read_status(float process_variable, float temp_reading,
 			     float temp_exp, float temp_range) 
 {
-  float process_variable = float_from_byte_array(byte_array, 11);
-  /* float elec_value = float_from_byte_array(byte_array, 7); */
-  /* float ma_out = float_from_byte_array(byte_array, 15); */
-  /* float cj_temp = float_from_byte_array(byte_array, 19); */
-
   if (process_variable == -1000000.000000) {
     return "ERROR: PROBE MISSING";
   }
-  else if (temp_reading - temp_exp > temp_range) {
-    return "WARNING: FREEZER TEMPERATURE ABOVE EXPECTED RANGE";
-  }
-  else if (temp_reading - temp_exp > -temp_range) {
-    return "WARNING: FREEZER TEMPERATURE BELOW EXPECTED RANGE";
+  else if (!((temp_exp - temp_range) <= temp_reading && 
+	     temp_reading <= (temp_exp + temp_range))) {
+    return "WARNING: FREEZER TEMPERATURE OUT OF EXPECTED RANGE";
   }
   else if (0 /* additional status conditions go here */) {
     return "";
@@ -109,8 +102,14 @@ void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
 {
   assert (array_len > 23);
 
+  float process_variable = float_from_byte_array(byte_array, 11);
+  /* float elec_value = float_from_byte_array(byte_array, 7); */
+  /* float ma_out = float_from_byte_array(byte_array, 15); */
+  /* float cj_temp = float_from_byte_array(byte_array, 19); */
+
   readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
-  readings->STATUS = get_device_read_status(byte_array, readings->ADC_VALUE,
+  readings->STATUS = get_device_read_status(process_variable, 
+					    readings->ADC_VALUE,
 					    temp_exp, temp_range);
 }
 
