@@ -1,0 +1,129 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 1 (0x1)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: C=CA, ST=Alberta, L=Edmonton, O=CBSR, OU=Tempmon Project, CN=Connor/emailAddress=cpeck1@ualberta.ca
+        Validity
+            Not Before: Aug 13 21:00:26 2013 GMT
+            Not After : Aug 11 21:00:26 2023 GMT
+        Subject: C=CA, ST=Alberta, O=CBSR, OU=Tempmon Project, CN=10.13.7.179/emailAddress=cpeck1@10.13.7.179
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (4096 bit)
+                Modulus:
+                    00:c1:5b:46:2c:b2:6c:92:52:bc:01:0a:00:f3:4e:
+                    f0:12:f4:a2:56:b9:f6:a5:d6:27:22:26:36:f7:4a:
+                    24:6e:f0:2c:23:05:66:df:40:0c:e0:08:d5:89:0e:
+                    28:6c:05:6b:98:d9:78:26:1b:5a:f3:e0:13:c8:4f:
+                    ac:19:22:9d:f9:a0:f2:37:51:bf:6c:09:cb:1e:98:
+                    12:e9:66:ec:b5:44:98:ea:a0:f7:97:3e:b5:78:2e:
+                    42:92:62:b5:0a:c9:54:7f:47:62:61:7c:bd:07:12:
+                    7a:bf:0c:7d:c9:07:13:38:7f:4c:b5:71:8b:23:6a:
+                    65:83:2b:a6:b5:b7:b8:f6:31:69:2a:a3:20:b2:a9:
+                    9e:11:f7:79:38:c2:d2:2f:78:ee:b2:f3:d8:b0:c6:
+                    ee:fb:05:55:c2:4c:97:7c:e7:f6:81:ed:58:0d:89:
+                    2c:62:2e:8f:30:5c:ba:6f:0d:39:d7:c6:da:32:3a:
+                    fb:77:37:fb:2b:93:41:33:e7:ae:b0:ea:23:f3:28:
+                    d6:7c:ce:da:71:be:e6:77:5a:a0:b2:55:e1:4a:49:
+                    33:7e:9f:3e:4a:0e:a7:63:6d:83:db:e6:5a:12:c5:
+                    bc:49:6c:71:ad:be:34:e8:48:f2:ba:a3:d8:4e:13:
+                    f1:13:8f:fe:15:f8:71:14:88:3a:c1:bb:5c:27:06:
+                    5e:40:70:0d:75:39:16:9b:af:12:e8:c5:d4:16:56:
+                    26:5c:07:0c:fd:09:94:45:84:89:2a:95:cb:2c:7f:
+                    ee:7d:cb:50:64:0f:39:73:00:11:dc:21:76:a8:ea:
+                    53:01:1f:5c:93:0d:64:8c:b5:e9:f7:08:51:8a:f5:
+                    8e:bf:61:0e:34:7c:b6:6e:c7:d5:91:6d:1a:28:87:
+                    fe:b3:79:09:95:13:d6:d5:37:9b:7e:dd:23:85:e1:
+                    4d:e9:be:b7:1e:4e:01:25:b2:13:e8:1d:57:d7:f5:
+                    6e:2d:2d:89:97:b7:10:b5:9d:88:4b:1c:b1:f6:6c:
+                    11:96:ce:16:33:aa:49:ca:81:2b:8a:5e:2c:71:f5:
+                    9c:97:2c:48:16:de:78:65:99:93:b5:f0:bc:6e:8d:
+                    1b:5d:f6:72:8e:9f:d9:f6:ad:01:9a:24:26:17:d0:
+                    ea:3b:95:e0:26:54:9b:1f:1e:f1:49:24:e0:2d:ef:
+                    15:80:71:f7:35:9a:3a:60:c8:5f:3d:ea:6a:51:04:
+                    34:f9:7d:f3:cb:d0:3b:75:31:86:a0:0d:b2:29:00:
+                    ed:ab:6f:9d:35:43:12:d3:78:1c:c6:86:d9:a6:ef:
+                    ca:f4:76:ae:e1:66:d3:1c:18:ab:f5:ee:68:4b:af:
+                    ba:b7:a5:6a:53:59:11:a1:62:ed:50:e9:ed:eb:08:
+                    8a:11:63
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                2F:FA:20:78:53:12:86:14:5C:A3:3B:E2:CE:45:8A:43:F3:7F:FA:FF
+            X509v3 Authority Key Identifier: 
+                DirName:/C=CA/ST=Alberta/L=Edmonton/O=CBSR/OU=Tempmon Project/CN=Connor/emailAddress=cpeck1@ualberta.ca
+                serial:DC:10:82:66:F3:4D:04:1D
+
+    Signature Algorithm: sha1WithRSAEncryption
+         41:f9:21:55:32:a2:46:1c:00:ba:b3:54:a0:bf:4c:47:8f:00:
+         65:19:89:f2:73:4d:2f:e5:d1:e9:e0:11:6e:0c:fd:63:b1:82:
+         4f:d8:f4:db:fe:ee:e1:ef:77:5e:44:b3:78:e0:6d:7a:7a:a5:
+         6e:b2:2b:48:46:a0:81:54:d2:ae:b0:ab:9c:28:33:97:a4:17:
+         37:1d:e8:fd:76:f2:af:51:e0:42:6b:c1:8c:ca:fd:6f:9b:ac:
+         49:fd:3f:4c:ef:98:74:e6:59:8f:91:07:bd:2a:1b:3b:5d:fb:
+         31:1c:1c:7d:78:d1:b9:9e:1c:a7:0c:2d:f5:3f:62:35:36:f6:
+         35:43:a7:af:58:2b:ae:f4:82:0b:26:3b:be:6e:51:43:c2:1f:
+         8b:fc:48:d8:bc:65:d1:e7:64:2c:bd:ab:b4:44:ed:c5:4d:c4:
+         71:6b:c9:20:42:9d:67:49:28:72:15:85:94:5a:29:15:77:75:
+         59:b3:22:8d:5c:ee:b0:4b:f4:46:20:67:e5:fd:2d:f0:0e:bd:
+         02:42:28:cf:66:3f:ea:89:2a:81:d1:22:fa:44:e7:f9:33:44:
+         ef:0a:ee:dd:b1:b5:e1:3d:df:b8:ae:65:72:ca:45:b6:fb:be:
+         98:43:d4:96:72:40:c5:d6:6f:80:55:3a:c7:f0:0b:be:47:97:
+         a5:38:4c:59:f3:e0:03:81:2e:cd:d8:99:3c:11:88:9a:9d:d8:
+         5b:87:44:88:e7:89:8f:d9:52:f3:b6:96:88:0a:45:78:1e:3e:
+         2e:28:be:de:5f:99:85:fe:3c:74:98:a6:a9:93:f5:45:bb:25:
+         b7:bd:c9:55:d7:83:4c:49:65:83:65:4e:3a:b8:74:c9:f9:16:
+         92:d5:c3:92:bc:36:c8:07:ef:2e:74:20:fe:4a:ef:47:84:08:
+         a0:3b:de:69:51:4c:36:ae:9a:68:c7:e0:fe:d5:f5:a2:0d:da:
+         7e:31:00:80:05:23:f0:98:ed:fa:56:e3:db:32:b9:ba:95:13:
+         eb:81:d5:c3:38:fb:11:cc:d1:22:8b:e3:c4:fa:22:82:d6:d8:
+         a7:9b:4c:d9:07:9c:fe:f1:a6:8a:8d:d8:47:cb:4f:13:f4:93:
+         94:1e:68:b5:6a:0a:94:0e:d9:c6:50:55:4b:30:66:57:29:81:
+         22:a7:17:97:bc:38:ab:3c:c9:cd:a4:3e:ed:c9:4e:c9:27:13:
+         a1:19:9f:f9:fb:02:e9:d5:4f:34:d6:c5:d1:71:ae:92:ce:bb:
+         60:d9:d5:79:5a:9d:da:78:d6:7b:67:5f:cb:19:35:fb:17:73:
+         5b:8b:e3:ce:3e:f1:45:48:59:ba:cb:ff:ef:ac:be:2e:99:cc:
+         b9:29:88:20:57:12:6f:c7
+-----BEGIN CERTIFICATE-----
+MIIGnDCCBISgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBjzELMAkGA1UEBhMCQ0Ex
+EDAOBgNVBAgMB0FsYmVydGExETAPBgNVBAcMCEVkbW9udG9uMQ0wCwYDVQQKDARD
+QlNSMRgwFgYDVQQLDA9UZW1wbW9uIFByb2plY3QxDzANBgNVBAMMBkNvbm5vcjEh
+MB8GCSqGSIb3DQEJARYSY3BlY2sxQHVhbGJlcnRhLmNhMB4XDTEzMDgxMzIxMDAy
+NloXDTIzMDgxMTIxMDAyNlowgYExCzAJBgNVBAYTAkNBMRAwDgYDVQQIDAdBbGJl
+cnRhMQ0wCwYDVQQKDARDQlNSMRgwFgYDVQQLDA9UZW1wbW9uIFByb2plY3QxFDAS
+BgNVBAMMCzEwLjEzLjcuMTc5MSEwHwYJKoZIhvcNAQkBFhJjcGVjazFAMTAuMTMu
+Ny4xNzkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDBW0YssmySUrwB
+CgDzTvAS9KJWufal1iciJjb3SiRu8CwjBWbfQAzgCNWJDihsBWuY2XgmG1rz4BPI
+T6wZIp35oPI3Ub9sCcsemBLpZuy1RJjqoPeXPrV4LkKSYrUKyVR/R2JhfL0HEnq/
+DH3JBxM4f0y1cYsjamWDK6a1t7j2MWkqoyCyqZ4R93k4wtIveO6y89iwxu77BVXC
+TJd85/aB7VgNiSxiLo8wXLpvDTnXxtoyOvt3N/srk0Ez566w6iPzKNZ8ztpxvuZ3
+WqCyVeFKSTN+nz5KDqdjbYPb5loSxbxJbHGtvjToSPK6o9hOE/ETj/4V+HEUiDrB
+u1wnBl5AcA11ORabrxLoxdQWViZcBwz9CZRFhIkqlcssf+59y1BkDzlzABHcIXao
+6lMBH1yTDWSMten3CFGK9Y6/YQ40fLZux9WRbRooh/6zeQmVE9bVN5t+3SOF4U3p
+vrceTgElshPoHVfX9W4tLYmXtxC1nYhLHLH2bBGWzhYzqknKgSuKXixx9ZyXLEgW
+3nhlmZO18LxujRtd9nKOn9n2rQGaJCYX0Oo7leAmVJsfHvFJJOAt7xWAcfc1mjpg
+yF896mpRBDT5ffPL0Dt1MYagDbIpAO2rb501QxLTeBzGhtmm78r0dq7hZtMcGKv1
+7mhLr7q3pWpTWRGhYu1Q6e3rCIoRYwIDAQABo4IBDTCCAQkwCQYDVR0TBAIwADAs
+BglghkgBhvhCAQ0EHxYdT3BlblNTTCBHZW5lcmF0ZWQgQ2VydGlmaWNhdGUwHQYD
+VR0OBBYEFC/6IHhTEoYUXKM74s5FikPzf/r/MIGuBgNVHSMEgaYwgaOhgZWkgZIw
+gY8xCzAJBgNVBAYTAkNBMRAwDgYDVQQIDAdBbGJlcnRhMREwDwYDVQQHDAhFZG1v
+bnRvbjENMAsGA1UECgwEQ0JTUjEYMBYGA1UECwwPVGVtcG1vbiBQcm9qZWN0MQ8w
+DQYDVQQDDAZDb25ub3IxITAfBgkqhkiG9w0BCQEWEmNwZWNrMUB1YWxiZXJ0YS5j
+YYIJANwQgmbzTQQdMA0GCSqGSIb3DQEBBQUAA4ICAQBB+SFVMqJGHAC6s1Sgv0xH
+jwBlGYnyc00v5dHp4BFuDP1jsYJP2PTb/u7h73deRLN44G16eqVusitIRqCBVNKu
+sKucKDOXpBc3Hej9dvKvUeBCa8GMyv1vm6xJ/T9M75h05lmPkQe9Khs7XfsxHBx9
+eNG5nhynDC31P2I1NvY1Q6evWCuu9IILJju+blFDwh+L/EjYvGXR52Qsvau0RO3F
+TcRxa8kgQp1nSShyFYWUWikVd3VZsyKNXO6wS/RGIGfl/S3wDr0CQijPZj/qiSqB
+0SL6ROf5M0TvCu7dsbXhPd+4rmVyykW2+76YQ9SWckDF1m+AVTrH8Au+R5elOExZ
+8+ADgS7N2Jk8EYiandhbh0SI54mP2VLztpaICkV4Hj4uKL7eX5mF/jx0mKapk/VF
+uyW3vclV14NMSWWDZU46uHTJ+RaS1cOSvDbIB+8udCD+Su9HhAigO95pUUw2rppo
+x+D+1fWiDdp+MQCABSPwmO36VuPbMrm6lRPrgdXDOPsRzNEii+PE+iKC1tinm0zZ
+B5z+8aaKjdhHy08T9JOUHmi1agqUDtnGUFVLMGZXKYEipxeXvDirPMnNpD7tyU7J
+JxOhGZ/5+wLp1U801sXRca6Szrtg2dV5Wp3aeNZ7Z1/LGTX7F3Nbi+POPvFFSFm6
+y//vrL4umcy5KYggVxJvxw==
+-----END CERTIFICATE-----
