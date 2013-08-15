@@ -1,6 +1,6 @@
 # Django settings for server project.
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -37,7 +37,7 @@ DATABASES = {
         'NAME': 'tmon',                     
         # The following settings are not used with sqlite3:
         'USER': 'rpi',
-        'PASSWORD': 'radar1196',
+        'PASSWORD': 'R1chd0ghunt$',
         'HOST': '',                    
         'PORT': '',                    
     }

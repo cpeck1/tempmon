@@ -4,6 +4,6 @@
 	"url":"https://10.13.7.179/specifications/",
 	"user":"rpi",
 	"pwd":"radar1196",
-	"ca_path":"/home/cpeck1/workspace/tempmon3/tempmon/client/ssl/tempmonCA.crt"
+	"ca_path":"/home/rpi/tempmon-client/ssl/tempmonCA.crt"
     }
 }
