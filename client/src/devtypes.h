@@ -147,7 +147,10 @@ void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
 
 void display_readings(SEM710_READINGS *readings);
 
-void pack_readings(SEM710_READINGS *readings, char *filename);
+void pack_auth(char *user, char *password, char *filename);
+
+void pack_readings(SEM710_READINGS *readings, char *user, 
+		   char *password, char *filename);
 
 void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
 

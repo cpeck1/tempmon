@@ -13,23 +13,28 @@
 
 #define GLOBAL_FILE "globals.json"
 #define READINGS_FILE "lastread.json"
+#define AUTH_FILE "auth.json"
 
 int main(void)
 { 
   cJSON *froot;
   cJSON *fob;
 
-  char *freezer_num = NULL;
-  char *specifications_url = NULL;
-  char *auth_user = NULL;
-  char *auth_pwd = NULL;
-  char *ca_path = NULL;
+  char *freezer_num = (char *) malloc(50);
+  char *specifications_url = (char *) malloc(100);
+  char *specifications_uri = (char *) malloc(100);
+  char *auth_user = (char *) malloc(255);
+  char *auth_pwd = (char *) malloc(255);
+  char *ca_path = (char *) malloc(255);
+
+  char *specifications_path = (char *) malloc(255);
 
   cJSON *webroot;
   cJSON *webspecs;
   cJSON *ob;
+  cJSON *monitor;
 
-  float read_frequency;
+  float next_update_in;
   char *upload_url_root = "";
   int product_id;
   int vendor_id;
@@ -78,6 +83,11 @@ int main(void)
       specifications_url = fob->valuestring;
     } else { err = 1; }
 
+    fob = cJSON_GetObjectItem(froot, "spec_uri");
+    if (fob != NULL) {
+      specifications_uri = fob->valuestring;
+    } else { err = 1; }
+
     fob = cJSON_GetObjectItem(froot, "user");
     if (fob != NULL) {
       auth_user = fob->valuestring;
@@ -99,6 +109,12 @@ int main(void)
     return 1;
   }
 
+  pack_auth(auth_user, auth_pwd, AUTH_FILE);
+  sprintf(specifications_path, "%s%s%s", specifications_url, freezer_num, specifications_uri);
+  //strcpy(specifications_path, specifications_url);
+  //strcat(specifications_path, freezer_num);
+  //strcat(specifications_path, specifications_uri);
+  ca_path = NULL;
   while (1) {
     usleep(500000);
     err = 0;
@@ -106,49 +122,75 @@ int main(void)
     /*********************/
     /* Connect to server */
     /*********************/
-    if ((webroot = get_runtime_specifications(specifications_url, auth_user,
-					      auth_pwd, ca_path)) == NULL) {
+
+    if ((webroot = get_runtime_specifications(specifications_path, AUTH_FILE, ca_path)) == NULL) {
       err = 1;
     }
     else {
       webspecs = cJSON_GetObjectItem(webroot, "specifications");
+      
       if (webspecs != NULL) {
-	ob = cJSON_GetObjectItem(webspecs, "read_frequency");
+	ob = cJSON_GetObjectItem(webspecs, "nextUpdateIn");
 	if (ob != NULL) {
-	  read_frequency = ob->valuedouble;
-	} else { err = 1; }
+	  next_update_in = ob->valuedouble;
 
-	ob = cJSON_GetObjectItem(webspecs, "upload_url_root");
+	} else { 
+	  puts("Missing specifications parameter: nextUpdateIn\n");
+	  err = 1; 
+	}
+
+	ob = cJSON_GetObjectItem(webspecs, "uploadURL");
 	if (ob != NULL) {
 	  upload_url_root = ob->valuestring;
-	} else { err = 1; }
+	} else { 
+	  puts("Missing specifications parameter: uploadURL");
+	  err = 1; 
+	}
 
-	ob = cJSON_GetObjectItem(webspecs, "product_id");
-	if (ob != NULL) {
-	  product_id = ob->valueint;
-	} else { err = 1; }
+	monitor = cJSON_GetObjectItem(webspecs, "monitor");
+	if (monitor != NULL) {
+	  ob = cJSON_GetObjectItem(monitor, "productID");
+	  if (ob != NULL) {
+	    product_id = ob->valueint;
+	  } else { 
+	    puts("Missing specifications parameter: productID");
+	    err = 1; 
+	  }
 
-	ob = cJSON_GetObjectItem(webspecs, "vendor_id");
-	if (ob != NULL) {
-	  vendor_id = ob->valueint;
-	} else { err = 1; }
+	  ob = cJSON_GetObjectItem(monitor, "vendorID");
+	  if (ob != NULL) {
+	    vendor_id = ob->valueint;
+	  } else { 
+	    err = 1; 
+	    puts("Missing specifications parameter: vendorID");
+	  }
+	}
+	else {
+	  puts("Missing specifications parameter: monitor");
+	  err = 1;
+	}
 
-	ob = cJSON_GetObjectItem(webspecs, "expected_temperature");
+	ob = cJSON_GetObjectItem(webspecs, "expectedTemperature");
 	if (ob != NULL) {
 	  expected_temperature = ob->valuedouble;
-	} else { err = 1; }
+	} else { 
+	  puts("Missing specifications parameter: expectedTemperature");
+	  err = 1; 
+	}
 
-	ob = cJSON_GetObjectItem(webspecs, "safe_temperature_range");
+	ob = cJSON_GetObjectItem(webspecs, "temperatureRange");
 	if (ob != NULL) {
 	  safe_temperature_range = ob->valuedouble;
-	} else { err = 1; }
+	} else { 
+	  puts("Missing specifications parameter: temperatureRange");
+	  err = 1; 
+	}
       }
 
       if (!err) {
 	strcat(upload_url_root, freezer_num);
 	strcpy(upload_url, upload_url_root);
 
-	read_frequency = read_frequency - 0.066666; 
       }
       cJSON_Delete(webroot);
     }
@@ -194,16 +236,14 @@ int main(void)
     /*************************/
     /* Upload data to server */
     /*************************/
-    time(&tnow);
-    if (((difftime(tnow, tlast)/60) > read_frequency ||
+    if ((next_update_in == 0 ||
 	 (prev_status != readings.STATUS)) && read_bytes > 0) {
       /*
 	if the time since the last read is greater than the required wait time,
 	or if the status has changed since the last read, update.
       */
-      pack_readings(&readings, READINGS_FILE);
-      do_web_put(upload_url, READINGS_FILE, auth_user, auth_pwd, ca_path);
-      time(&tlast);
+      pack_readings(&readings, auth_user, auth_pwd, READINGS_FILE);
+      do_web_put(upload_url, READINGS_FILE, ca_path);
     }
     prev_status = readings.STATUS;
   }
@@ -212,7 +252,14 @@ int main(void)
   cJSON_Delete(froot);
   ftdi_deinit(ftHandle);
   ftdi_free(ftHandle);
-  return 0;
+  
+  free(freezer_num);
+  free(specifications_url);
+  free(specifications_uri);
+  free(specifications_path);
+  free(auth_user);
+  free(auth_pwd);
+  free(ca_path);
 }
 
 #endif

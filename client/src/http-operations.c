@@ -24,7 +24,7 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
+void do_web_put(char *url, char *filename, char *ca_path)
 {
   /*
     PUT the file with the given filename to the given url, using the given 
@@ -71,8 +71,6 @@ void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0); 
     }
 
-    curl_easy_setopt(curl, CURLOPT_USERNAME, user);
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
     /* 
        provide the size of the upload, we specifically typecast the value to
        curl_off_t since we must be sure to use the correct data size
@@ -92,7 +90,7 @@ void do_web_put(char *url, char *filename, char *user, char *pwd, char *ca_path)
   }
 }
 
-cJSON *get_runtime_specifications(char *url, char *user, char *pwd, 
+cJSON *get_runtime_specifications(char *url, char *filename,
 				  char *ca_path)
 {
   /*
@@ -104,7 +102,7 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
     work-around.
   */
     
-  cJSON *webroot = NULL;
+  cJSON *webroot = NULL;;
 
   /* keeps the handle to the curl object */
   CURL *curl = NULL;
@@ -114,18 +112,34 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
 
   int ret;
 
+  FILE *file;
+  int hd;
+  struct stat file_info;
+  struct curl_slist *slist = NULL;
+
+  hd = open(filename, O_RDONLY);
+  fstat(hd, &file_info);
+  close(hd);
+
+  file = fopen(filename, "r");
+
   curl = curl_easy_init();
   if (curl) {
+    slist = curl_slist_append(slist, "Content-Type: application/json");
+    
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
 
-    curl_easy_setopt(curl, CURLOPT_USERNAME, user);
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, pwd);
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 
     if (ca_path != NULL) {
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
       curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
     }
+    
+    /* specify file to upload */
+    curl_easy_setopt(curl, CURLOPT_READDATA, file);
 
     /* follow locations specified by the response header */
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -134,8 +148,12 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
     /* passing the pointer to the response as the callback parameter */
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, 
+		     (curl_off_t) file_info.st_size);
+
     /* perform the request */
     ret = curl_easy_perform(curl);
+    
     if (ret != CURLE_OK && ret != CURLE_WRITE_ERROR) {
       printf("Error code: %d\n", ret);
       curl_easy_cleanup(curl);
@@ -151,10 +169,8 @@ cJSON *get_runtime_specifications(char *url, char *user, char *pwd,
       The following "fix" was necessitated by cJSON's insistence that you cannot
       fetch object items from roots
     */
-    strcpy(json_content, "{\"specifications\":");
-    strncat(json_content, buffer, strlen(buffer)-1);
-    strcat(json_content, "} }");
-
+    strcpy(json_content, buffer);
+    puts(buffer);
     webroot = cJSON_Parse(json_content);
     if (webroot != NULL) {
       return webroot;

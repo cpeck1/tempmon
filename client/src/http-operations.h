@@ -12,10 +12,9 @@ extern "C" {
 size_t write_callback_func(void *buffer, size_t size,
 			   size_t nmemb, void *userp);
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
-char *do_web_put(char *url, char *to_put, char *user, char *pwd, 
-		 char *ca_path);
+char *do_web_put(char *url, char *to_put, char *ca_path);
 
-cJSON *get_runtime_specifications(char *url, char *user, char *pwd, 
+cJSON *get_runtime_specifications(char *url, char *filename, 
 				  char *ca_path);
 #ifdef __cplusplus
 }

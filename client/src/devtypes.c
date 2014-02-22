@@ -123,13 +123,33 @@ void display_readings(SEM710_READINGS *readings)
   /* printf("CJ_TEMP=%f\n", readings->CJ_TEMP); */
 }
 
-void pack_readings(SEM710_READINGS *readings, char *filename)
+void pack_auth(char *user, char *password, char *filename) {
+  char json_auth[100];
+  FILE *f;
+
+  sprintf(json_auth, "{ \"email\": \"%s\", \"password\": \"%s\" }",
+	  user, password);
+
+  f = fopen(filename, "w");
+  fputs(json_auth, f);
+  fclose(f);
+
+}
+
+void pack_readings(SEM710_READINGS *readings, char *user, 
+		   char *password, char *filename)
 {
   char json_readings[100];
   FILE *f;
 
-  sprintf(json_readings, "{ \"temperature\": %f, \"status\": \"%s\" }",
-	  readings->ADC_VALUE, readings->STATUS);
+  sprintf(
+	  json_readings, 
+ "{ \"email\": %s, \"password\": %s, \"temperature\": %f, \"status\": \"%s\" }",
+	  user,
+	  password,
+	  readings->ADC_VALUE, 
+	  readings->STATUS
+	  );
 
   f = fopen(filename, "w");
   fputs(json_readings, f);
