@@ -140,9 +140,8 @@ typedef struct {
 
 uint8_t get_confirmation_byte(SEM_COMMANDS c);
 
-char *get_device_read_status(float process_variable, float temp_reading,
-			     float temp_exp, float temp_range);
-
+char *get_device_read_status(float temp_reading, float temp_exp, 
+			     float temp_range);
 void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
 		  uint8_t *byte_array, int array_len);
 
