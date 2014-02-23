@@ -79,10 +79,10 @@ uint8_t get_confirmation_byte(SEM_COMMANDS c) {
   return 0;
 }
 /* (temp_exp - range) <= temp_reading <= (temp_exp + range) */
-char *get_device_read_status(float process_variable, float temp_reading,
-			     float temp_exp, float temp_range) 
+char *get_device_read_status(float temp_reading, float temp_exp, 
+			     float temp_range) 
 {
-  if (process_variable == -1000000.000000) {
+  if (temp_reading == -1000000.000000) {
     return "ERROR: PROBE MISSING";
   }
   else if (!((temp_exp - temp_range) <= temp_reading && 
@@ -92,9 +92,8 @@ char *get_device_read_status(float process_variable, float temp_reading,
   else if (0 /* additional status conditions go here */) {
     return "";
   }
-  else {
-    return "OK";
-  }
+
+  return "OK";
 }
 
 void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
@@ -102,20 +101,19 @@ void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
 {
   assert (array_len > 23);
 
-  float process_variable = float_from_byte_array(byte_array, 11);
   /* float elec_value = float_from_byte_array(byte_array, 7); */
   /* float ma_out = float_from_byte_array(byte_array, 15); */
   /* float cj_temp = float_from_byte_array(byte_array, 19); */
 
-  readings->PROCESS_VARIABLE = process_variable
-  readings->STATUS = get_device_read_status(process_variable, 
-					    process_variable,
+  readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
+  readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11);
+  readings->STATUS = get_device_read_status(readings->PROCESS_VARIABLE, 
 					    temp_exp, temp_range);
 }
 
 void display_readings(SEM710_READINGS *readings)
 {
-  printf("ADC_VALUE=%f\n", readings->PROCESS_VARIABLE);
+  printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
   printf("STATUS=%s\n", readings->STATUS);
   /* printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE); */
   /* printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE); */
