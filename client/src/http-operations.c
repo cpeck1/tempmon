@@ -170,7 +170,6 @@ cJSON *get_runtime_specifications(char *url, char *filename,
       fetch object items from roots
     */
     strcpy(json_content, buffer);
-    puts(buffer);
     webroot = cJSON_Parse(json_content);
     if (webroot != NULL) {
       return webroot;
