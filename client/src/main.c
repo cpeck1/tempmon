@@ -252,7 +252,6 @@ int main(void)
 	if the time since the last read is greater than the required wait time,
 	or if the status has changed since the last read, update.
       */
-
       pack_readings(&readings, auth_user, auth_pwd, READINGS_FILE);
       do_web_put(upload_url, READINGS_FILE, ca_path);
 

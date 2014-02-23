@@ -107,15 +107,15 @@ void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
   /* float ma_out = float_from_byte_array(byte_array, 15); */
   /* float cj_temp = float_from_byte_array(byte_array, 19); */
 
-  readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
+  readings->PROCESS_VARIABLE = process_variable
   readings->STATUS = get_device_read_status(process_variable, 
-					    readings->ADC_VALUE,
+					    process_variable,
 					    temp_exp, temp_range);
 }
 
 void display_readings(SEM710_READINGS *readings)
 {
-  printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
+  printf("ADC_VALUE=%f\n", readings->PROCESS_VARIABLE);
   printf("STATUS=%s\n", readings->STATUS);
   /* printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE); */
   /* printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE); */
@@ -147,7 +147,7 @@ void pack_readings(SEM710_READINGS *readings, char *user,
  "{ \"email\": \"%s\", \"password\": \"%s\", \"temperature\": %f, \"status\": \"%s\" }",
 	  user,
 	  password,
-	  readings->ADC_VALUE, 
+	  readings->PROCESS_VARIABLE, 
 	  readings->STATUS
 	  );
 
