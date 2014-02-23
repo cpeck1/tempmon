@@ -72,12 +72,14 @@ WAITING,
 } COMMS_RX_STATE;
 
 typedef struct {
+  float ADC_VALUE;
   char *STATUS;
   /* float ELEC_VALUE; */
-  float PROCESS_VARIABLE;
+  float PROCESS_VARIABLE; /*<-- ie temperature!! */
   /* float MA_OUT; */
   /* float CJ_TEMP; */
 } SEM710_READINGS;
+
 
 typedef struct {
   uint8_t tc_code;
