@@ -2,8 +2,10 @@
 #define __MAIN_FN
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 
 #include "fparse.h"
 #include "devtypes.h"
@@ -21,7 +23,7 @@ int main(void)
   cJSON *fob;
 
   char *freezer_num = (char *) malloc(50);
-  char *specifications_url = (char *) malloc(100);
+  char *specifications_url = (char *) malloc(250);
   char *specifications_uri = (char *) malloc(100);
   char *auth_user = (char *) malloc(255);
   char *auth_pwd = (char *) malloc(255);
@@ -35,13 +37,13 @@ int main(void)
   cJSON *monitor;
 
   float next_update_in;
-  char *upload_url_root = "";
+  char *upload_url_root = (char *) malloc(100);
   int product_id;
   int vendor_id;
   float expected_temperature;
   float safe_temperature_range;
 
-  char upload_url[100];
+  char *upload_url = (char *) malloc(500);
 
   time_t tlast;
   time_t tnow;
@@ -103,11 +105,11 @@ int main(void)
       ca_path = fob->valuestring;
     } else { err = 1; }
   }
-
   if (err) {
     puts("Failed to fetch specifications from file. Exiting...");
     return 1;
   }
+
 
   pack_auth(auth_user, auth_pwd, AUTH_FILE);
   sprintf(specifications_path, "%s%s%s", specifications_url, freezer_num, specifications_uri);
@@ -122,8 +124,10 @@ int main(void)
     /*********************/
     /* Connect to server */
     /*********************/
-
-    if ((webroot = get_runtime_specifications(specifications_path, AUTH_FILE, ca_path)) == NULL) {
+    if (
+	(webroot = get_runtime_specifications(specifications_path, 
+					      AUTH_FILE, 
+					      ca_path)) == NULL) {
       err = 1;
     }
     else {
@@ -132,8 +136,8 @@ int main(void)
       if (webspecs != NULL) {
 	ob = cJSON_GetObjectItem(webspecs, "nextUpdateIn");
 	if (ob != NULL) {
-	  next_update_in = ob->valuedouble;
-
+	  next_update_in = atof(ob->valuestring);
+	  printf("next update in = %f\n", next_update_in);
 	} else { 
 	  puts("Missing specifications parameter: nextUpdateIn\n");
 	  err = 1; 
@@ -141,7 +145,11 @@ int main(void)
 
 	ob = cJSON_GetObjectItem(webspecs, "uploadURL");
 	if (ob != NULL) {
+
+
 	  upload_url_root = ob->valuestring;
+
+	  printf("upload url root = %s\n", upload_url_root);
 	} else { 
 	  puts("Missing specifications parameter: uploadURL");
 	  err = 1; 
@@ -151,7 +159,8 @@ int main(void)
 	if (monitor != NULL) {
 	  ob = cJSON_GetObjectItem(monitor, "productID");
 	  if (ob != NULL) {
-	    product_id = ob->valueint;
+	    product_id = atoi(ob->valuestring);
+	    printf("product ID: %d\n", product_id);
 	  } else { 
 	    puts("Missing specifications parameter: productID");
 	    err = 1; 
@@ -159,7 +168,8 @@ int main(void)
 
 	  ob = cJSON_GetObjectItem(monitor, "vendorID");
 	  if (ob != NULL) {
-	    vendor_id = ob->valueint;
+	    vendor_id = atoi(ob->valuestring);
+	    printf("vendor ID: %d\n", vendor_id);
 	  } else { 
 	    err = 1; 
 	    puts("Missing specifications parameter: vendorID");
@@ -172,7 +182,8 @@ int main(void)
 
 	ob = cJSON_GetObjectItem(webspecs, "expectedTemperature");
 	if (ob != NULL) {
-	  expected_temperature = ob->valuedouble;
+	  expected_temperature = atof(ob->valuestring);
+	  printf("expected temperature = %f\n", expected_temperature);
 	} else { 
 	  puts("Missing specifications parameter: expectedTemperature");
 	  err = 1; 
@@ -180,21 +191,20 @@ int main(void)
 
 	ob = cJSON_GetObjectItem(webspecs, "temperatureRange");
 	if (ob != NULL) {
-	  safe_temperature_range = ob->valuedouble;
+	  safe_temperature_range = atof(ob->valuestring);
+	  printf("temperature range = %f\n", safe_temperature_range);
 	} else { 
 	  puts("Missing specifications parameter: temperatureRange");
 	  err = 1; 
 	}
       }
-
       if (!err) {
-	strcat(upload_url_root, freezer_num);
-	strcpy(upload_url, upload_url_root);
+	strcpy(upload_url, specifications_url);
+	strcat(upload_url, upload_url_root);
 
       }
       cJSON_Delete(webroot);
     }
-
     if (err) {
       puts("Failed to fetch runtime specifications from server. Retrying...");
       continue;
@@ -205,7 +215,7 @@ int main(void)
     /**********************/
     err = detach_device_kernel(vendor_id, product_id);
     if (err) {
-      printf("Error detaching device kernel. Is the device attached?\n");
+      printf("Error detaching kernel of device with vendor ID %d and product ID %d. Is the device attached?\n", vendor_id, product_id);
       continue; 
     }
 
@@ -242,8 +252,10 @@ int main(void)
 	if the time since the last read is greater than the required wait time,
 	or if the status has changed since the last read, update.
       */
+
       pack_readings(&readings, auth_user, auth_pwd, READINGS_FILE);
       do_web_put(upload_url, READINGS_FILE, ca_path);
+
     }
     prev_status = readings.STATUS;
   }
@@ -260,6 +272,7 @@ int main(void)
   free(auth_user);
   free(auth_pwd);
   free(ca_path);
+  free(upload_url);
 }
 
 #endif

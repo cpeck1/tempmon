@@ -139,12 +139,12 @@ void pack_auth(char *user, char *password, char *filename) {
 void pack_readings(SEM710_READINGS *readings, char *user, 
 		   char *password, char *filename)
 {
-  char json_readings[100];
+  char json_readings[500];
   FILE *f;
 
   sprintf(
 	  json_readings, 
- "{ \"email\": %s, \"password\": %s, \"temperature\": %f, \"status\": \"%s\" }",
+ "{ \"email\": \"%s\", \"password\": \"%s\", \"temperature\": %f, \"status\": \"%s\" }",
 	  user,
 	  password,
 	  readings->ADC_VALUE, 

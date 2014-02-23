@@ -163,14 +163,15 @@ cJSON *get_runtime_specifications(char *url, char *filename,
     curl_easy_cleanup(curl); 
     strcpy(buffer, response);
     free(response);
+
   }
   if (strlen(buffer) > 0) {
     /*
       The following "fix" was necessitated by cJSON's insistence that you cannot
       fetch object items from roots
     */
-    strcpy(json_content, buffer);
-    webroot = cJSON_Parse(json_content);
+    printf(buffer);
+    webroot = cJSON_Parse(buffer);
     if (webroot != NULL) {
       return webroot;
     }
