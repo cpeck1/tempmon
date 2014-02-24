@@ -200,7 +200,8 @@ int main(void)
     }
   }  
   while (1) {
-    usleep(5000000); 
+    usleep(5000000);
+    next_update_in = next_update_in - 5;
     err = 0;
     /**********************/
     /* Open SEM710 device */
