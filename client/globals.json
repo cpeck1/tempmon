@@ -1,6 +1,6 @@
 {
     "specifications": {
-	"freezer_num":"/containers/6",
+	"freezer_num":"/containers/2",
 	"url":"http://10.12.20.75:9000",
 	"spec_uri":"/specifications/clientpkg.json",
 	"user":"cpeck1@ualberta.ca",

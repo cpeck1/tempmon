@@ -51,6 +51,7 @@ int main(void)
   char *prev_status = "FIRST_WRITE_OK?";
 
   int err = 0;
+  int specs_not_updated = 1;
 
   struct ftdi_context *ftHandle = NULL;
 
@@ -117,13 +118,8 @@ int main(void)
   //strcat(specifications_path, freezer_num);
   //strcat(specifications_path, specifications_uri);
   ca_path = NULL;
-  while (1) {
-    usleep(500000);
-    err = 0;
-
-    /*********************/
-    /* Connect to server */
-    /*********************/
+  
+  while (specs_not_updated) {
     if (
 	(webroot = get_runtime_specifications(specifications_path, 
 					      AUTH_FILE, 
@@ -132,44 +128,38 @@ int main(void)
     }
     else {
       webspecs = cJSON_GetObjectItem(webroot, "specifications");
-      
+    
       if (webspecs != NULL) {
 	ob = cJSON_GetObjectItem(webspecs, "nextUpdateIn");
 	if (ob != NULL) {
 	  next_update_in = atof(ob->valuestring);
-	  printf("next update in = %f\n", next_update_in);
 	} else { 
 	  puts("Missing specifications parameter: nextUpdateIn\n");
 	  err = 1; 
 	}
-
+      
 	ob = cJSON_GetObjectItem(webspecs, "uploadURL");
-	if (ob != NULL) {
-
-
+	if (ob != NULL) {	
 	  upload_url_root = ob->valuestring;
-
-	  printf("upload url root = %s\n", upload_url_root);
+	
 	} else { 
 	  puts("Missing specifications parameter: uploadURL");
 	  err = 1; 
 	}
-
+      
 	monitor = cJSON_GetObjectItem(webspecs, "monitor");
 	if (monitor != NULL) {
 	  ob = cJSON_GetObjectItem(monitor, "productID");
 	  if (ob != NULL) {
 	    product_id = atoi(ob->valuestring);
-	    printf("product ID: %d\n", product_id);
 	  } else { 
 	    puts("Missing specifications parameter: productID");
 	    err = 1; 
 	  }
-
+	
 	  ob = cJSON_GetObjectItem(monitor, "vendorID");
 	  if (ob != NULL) {
 	    vendor_id = atoi(ob->valuestring);
-	    printf("vendor ID: %d\n", vendor_id);
 	  } else { 
 	    err = 1; 
 	    puts("Missing specifications parameter: vendorID");
@@ -179,20 +169,18 @@ int main(void)
 	  puts("Missing specifications parameter: monitor");
 	  err = 1;
 	}
-
+      
 	ob = cJSON_GetObjectItem(webspecs, "expectedTemperature");
 	if (ob != NULL) {
 	  expected_temperature = atof(ob->valuestring);
-	  printf("expected temperature = %f\n", expected_temperature);
 	} else { 
 	  puts("Missing specifications parameter: expectedTemperature");
 	  err = 1; 
 	}
-
+      
 	ob = cJSON_GetObjectItem(webspecs, "temperatureRange");
 	if (ob != NULL) {
 	  safe_temperature_range = atof(ob->valuestring);
-	  printf("temperature range = %f\n", safe_temperature_range);
 	} else { 
 	  puts("Missing specifications parameter: temperatureRange");
 	  err = 1; 
@@ -201,15 +189,19 @@ int main(void)
       if (!err) {
 	strcpy(upload_url, specifications_url);
 	strcat(upload_url, upload_url_root);
-
+      
       }
       cJSON_Delete(webroot);
+      specs_not_updated = 0;
     }
     if (err) {
       puts("Failed to fetch runtime specifications from server. Retrying...");
-      continue;
+      usleep(5000000);
     }
-
+  }  
+  while (1) {
+    usleep(5000000); 
+    err = 0;
     /**********************/
     /* Open SEM710 device */
     /**********************/
@@ -255,6 +247,92 @@ int main(void)
       pack_readings(&readings, auth_user, auth_pwd, READINGS_FILE);
       do_web_put(upload_url, READINGS_FILE, ca_path);
 
+      specs_not_updated = 1;
+      while (specs_not_updated) {
+	if (
+	    (webroot = get_runtime_specifications(specifications_path, 
+						  AUTH_FILE, 
+						  ca_path)) == NULL) {
+	  err = 1;
+	}
+	else {
+	  webspecs = cJSON_GetObjectItem(webroot, "specifications");
+	
+	  if (webspecs != NULL) {
+	    ob = cJSON_GetObjectItem(webspecs, "nextUpdateIn");
+	    if (ob != NULL) {
+	      next_update_in = atof(ob->valuestring);
+	      printf("next update in = %f\n", next_update_in);
+	    } else { 
+	      puts("Missing specifications parameter: nextUpdateIn\n");
+	      err = 1; 
+	    }
+      
+	    ob = cJSON_GetObjectItem(webspecs, "uploadURL");
+	    if (ob != NULL) {	
+	      upload_url_root = ob->valuestring;
+	
+	      printf("upload url root = %s\n", upload_url_root);
+	    } else { 
+	      puts("Missing specifications parameter: uploadURL");
+	      err = 1; 
+	    }
+      
+	    monitor = cJSON_GetObjectItem(webspecs, "monitor");
+	    if (monitor != NULL) {
+	      ob = cJSON_GetObjectItem(monitor, "productID");
+	      if (ob != NULL) {
+		product_id = atoi(ob->valuestring);
+		printf("product ID: %d\n", product_id);
+	      } else { 
+		puts("Missing specifications parameter: productID");
+		err = 1; 
+	      }
+	
+	      ob = cJSON_GetObjectItem(monitor, "vendorID");
+	      if (ob != NULL) {
+		vendor_id = atoi(ob->valuestring);
+		printf("vendor ID: %d\n", vendor_id);
+	      } else { 
+		err = 1; 
+		puts("Missing specifications parameter: vendorID");
+	      }
+	    }
+	    else {
+	      puts("Missing specifications parameter: monitor");
+	      err = 1;
+	    }
+      
+	    ob = cJSON_GetObjectItem(webspecs, "expectedTemperature");
+	    if (ob != NULL) {
+	      expected_temperature = atof(ob->valuestring);
+	      printf("expected temperature = %f\n", expected_temperature);
+	    } else { 
+	      puts("Missing specifications parameter: expectedTemperature");
+	      err = 1; 
+	    }
+      
+	    ob = cJSON_GetObjectItem(webspecs, "temperatureRange");
+	    if (ob != NULL) {
+	      safe_temperature_range = atof(ob->valuestring);
+	      printf("temperature range = %f\n", safe_temperature_range);
+	    } else { 
+	      puts("Missing specifications parameter: temperatureRange");
+	      err = 1; 
+	    }
+	  }
+	  if (!err) {
+	    strcpy(upload_url, specifications_url);
+	    strcat(upload_url, upload_url_root);
+      
+	  }
+	  cJSON_Delete(webroot);
+	  specs_not_updated = 0;
+	}
+	if (err) {
+	  puts("Failed to fetch runtime specifications from server. Retrying...");
+	}
+      }
     }
     prev_status = readings.STATUS;
   }

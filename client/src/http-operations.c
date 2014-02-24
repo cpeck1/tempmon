@@ -106,8 +106,7 @@ cJSON *get_runtime_specifications(char *url, char *filename,
 
   /* keeps the handle to the curl object */
   CURL *curl = NULL;
-  char buffer[1024];
-  char *response;
+  char* json_buffer = (char *) malloc(2048);
   char json_content[1024];
 
   int ret;
@@ -146,7 +145,7 @@ cJSON *get_runtime_specifications(char *url, char *filename,
     /* setting a callback function to return the data */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     /* passing the pointer to the response as the callback parameter */
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &json_buffer);
 
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, 
 		     (curl_off_t) file_info.st_size);
@@ -161,20 +160,15 @@ cJSON *get_runtime_specifications(char *url, char *filename,
     }
     /* cleaning all curl stuff */
     curl_easy_cleanup(curl); 
-    strcpy(buffer, response);
-    free(response);
 
   }
-  if (strlen(buffer) > 0) {
-    /*
-      The following "fix" was necessitated by cJSON's insistence that you cannot
-      fetch object items from roots
-    */
-    printf(buffer);
-    webroot = cJSON_Parse(buffer);
+  if (strlen(json_buffer) > 0) {
+    webroot = cJSON_Parse(json_buffer);
     if (webroot != NULL) {
+      free(json_buffer);
       return webroot;
     }
   }
+  free(json_buffer);
   return NULL;
 }
