@@ -52,6 +52,7 @@ int main(void)
 
   int err = 0;
   int specs_not_updated = 1;
+  int reset_count = 0;
 
   struct ftdi_context *ftHandle = NULL;
 
@@ -200,6 +201,9 @@ int main(void)
     }
   }  
   while (1) {
+    if (reset_count > 5) {
+      break;
+    }
     usleep(5000000);
     next_update_in = next_update_in - 5;
     err = 0;
@@ -215,12 +219,14 @@ int main(void)
     err = ftdi_usb_open(ftHandle, vendor_id, product_id);
     if (err) { 
       printf("Error opening device.\n");
+      reset_count++;
       continue; 
     }
 
     err = prepare_device(ftHandle);
     if (err) { 
       printf("Error preparing device.\n");
+      reset_count++;
       continue;
     }
 
@@ -231,6 +237,7 @@ int main(void)
     ftdi_usb_close(ftHandle);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
+      reset_count++
       continue;
     }
     get_readings(&readings, expected_temperature, safe_temperature_range,
