@@ -237,7 +237,7 @@ int main(void)
     ftdi_usb_close(ftHandle);
     if (read_bytes <= 0) {
       printf("Read process failure.\n");
-      reset_count++
+      reset_count++;
       continue;
     }
     get_readings(&readings, expected_temperature, safe_temperature_range,
