@@ -239,7 +239,7 @@ int main(void)
     /*************************/
     /* Upload data to server */
     /*************************/
-    if ((next_update_in == 0 ||
+    if ((next_update_in <= 0 ||
 	 (prev_status != readings.STATUS)) && read_bytes > 0) {
       /*
 	if the time since the last read is greater than the required wait time,
