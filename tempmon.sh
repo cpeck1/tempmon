@@ -19,7 +19,7 @@
 # : sudo chmod 755 /etc/init.d/tempmonDaemon.sh
 # : sudo chmod 755 tempmon.sh
 # : 
-d=/home/connor/workspace/tempmon
+d=${PWD}
 c=$d/client/
 p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
