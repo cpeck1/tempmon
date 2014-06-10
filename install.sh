@@ -3,7 +3,7 @@ apt-get install libftdi-dev
 apt-get install libcurl4-openssl-dev
 
 chmod 755 tempmon.sh
-chmod 755 tempmonDaemon.sh
+chmod 755 tempmonDaemon
 mv tempmonDaemon.sh /etc/init.d/
 update-rc.d tempmonDaemon.sh defaults
 
