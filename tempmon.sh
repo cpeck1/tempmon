@@ -19,20 +19,20 @@
 # : sudo chmod 755 /etc/init.d/tempmonDaemon.sh
 # : sudo chmod 755 tempmon.sh
 # : 
-d=${PWD}
-c=$d/client/
+d=/home/pi/tempmon/
+c=$d/client/tempmon
 p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
 
 now=$(date)
 python $p
-cd $c
+cd $c/client
 make
 
 while [ true ];
 do
     echo "---Reading local device"
-    ./tempmon 
+    $c
     a=$?
 
     # if the program executed successfully, wait 30 seconds
