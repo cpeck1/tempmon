@@ -25,24 +25,18 @@ p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
 
 now=$(date)
-echo "!!!PROGRAM LAUNCHED: $now!!!" >> $f
-
-echo "---Discovering server IP" >> $f
 python $p
 cd $c
 make
 
 while [ true ];
 do
-    echo "---Reading local device" >> $f
+    echo "---Reading local device"
     ./tempmon 
     a=$?
 
-    echo "---Program exited with status code $a" >> $f
-    
     # if the program executed successfully, wait 30 seconds
     if [ "$a" -eq 0 ]; then
-	echo "---Next read in 30 seconds---" >> $f
 	sleep 30
 
     # Unfortunately if this error is encountered only human intervention can
@@ -50,26 +44,21 @@ do
     # on end, the process will terminate. Hopefully the server will report that
     # it hasn't updated
     elif [ "$a" -eq 1 ]; then
-	echo "---FATAL: corrupt global file, terminating---" >> $f
 	break
 
     # if the program terminated with a USB opening-related error, wait 60 
     # seconds
     elif [ "$a" -eq 2 ]; then
-	echo "---Waiting for USB device---" >> $f
 	sleep 60
     # if the program terminated with a USB reading-related error, wait a
     # minute before attempting to re-read; if this continues to happen, restart
     # the computer (restart disabled for now)
     elif [ "$a" -eq 3 ]; then
-	echo "---USB Read failed---" >> $f
 	    sleep 60
 
     # if the program terminated with a server-related error, re-run the server
     # discovery service to re-discover the server
     elif [ "$a" -eq 4 ]; then
-	echo "---Attempting to locate server---" >> $f
-
 	python $p 
 
 	sleep 10
