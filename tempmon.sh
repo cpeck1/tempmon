@@ -19,14 +19,14 @@
 # : sudo chmod 755 /etc/init.d/tempmonDaemon.sh
 # : sudo chmod 755 tempmon.sh
 # : 
-d=/home/pi/tempmon/
+d=/home/pi/tempmon
 c=$d/client/tempmon
 p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
 
 now=$(date)
 python $p
-cd $c/client
+cd $d/client
 make
 
 while [ true ];
