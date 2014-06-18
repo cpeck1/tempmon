@@ -75,7 +75,7 @@ int main(void)
   /*************************/
   /* Get globals from file */
   /*************************/
-
+  printf("Getting globals from file... ");
   vfnd = get_file_variable(GLOBAL_FILE, "url", fbuffer);
   if (vfnd) {
     strcpy(specifications_url, fbuffer);
@@ -170,10 +170,11 @@ int main(void)
     return IO_ERROR;
   }
   
-
+  printf("done\n");
   /**********************************/
   /* Get specifications from server */
   /**********************************/
+  printf("Getting specifications from server... ");
   pack_auth(auth_user, auth_pwd, AUTH_FILE);
   sprintf(specifications_path, "%s%s%s", specifications_url, container_num, 
 	  specifications_uri);
@@ -259,10 +260,11 @@ int main(void)
   }
 
   err = 0;
-
+  printf("done\n");
   /************************/
   /* Detach device kernel */
   /************************/
+  printf("Detaching device kernel... ");
   err = detach_device_kernel(vendor_id, product_id);
   if (err) {
     ftdi_deinit(ftHandle);
@@ -278,10 +280,12 @@ int main(void)
     free(upload_url);
     return USB_OPEN_ERROR;
   }
+  printf("done\n");
 
   /***************/
   /* Open device */
   /***************/
+  printf("Opening device... ");
   err = ftdi_usb_open(ftHandle, vendor_id, product_id);
   if (err) { 
     ftdi_deinit(ftHandle);
@@ -297,10 +301,11 @@ int main(void)
     free(upload_url);
     return USB_OPEN_ERROR;
   }
-
+  printf("done\n");
   /******************/
   /* Prepare device */
   /******************/
+  printf("Preparing device... ");
   err = prepare_device(ftHandle);
   if (err) { 
     ftdi_deinit(ftHandle);
@@ -316,19 +321,21 @@ int main(void)
     free(upload_url);
     return USB_OPEN_ERROR;
   }
-  
+  printf("done\n");
   /*******************************/
   /* Get previous reading status */
   /*******************************/
+  printf("Getting previous reading status... ");
   err = get_cjson_object_from_file("lastread.json", "status", &prev_status);
   
   if (err) {
     prev_status = "FIRST_WRITE_OK";
   } 
-
+  printf("done\n");
   /*************************/
   /* read data from SEM710 */
   /*************************/
+  printf("Reading device... ");
   read_bytes = read_device(ftHandle, SEM_COMMANDS_cREAD_PROCESS, inc_buf);
   ftdi_usb_close(ftHandle);
   
@@ -349,10 +356,11 @@ int main(void)
   
   get_readings(&readings, expected_temperature, safe_temperature_range,
 	       inc_buf, read_bytes);
-  
+  printf("done\n");
   /*************************/
   /* Upload data to server */
   /*************************/
+  printf("Uploading reading to server... ");
   if ((next_update_in <= 0 || strcmp(prev_status, readings.STATUS)) && 
       read_bytes > 0) {
     /*
@@ -377,7 +385,7 @@ int main(void)
     }
     do_http_put(upload_url, READINGS_FILE, ca_path);
   }
-  
+  printf("done\n");
   /****************/
   /* close device */
   /****************/
