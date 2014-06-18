@@ -6,7 +6,7 @@ import select
 import os
 
 DIR = os.path.dirname(os.path.realpath(__file__))
-GBL = DIR+"/client/globals.ini"
+GBL = "/tmp/SERVER_URL"
 
 MESSAGE = "REQUEST_SERVER_IP"
 MCAST_GRP = '224.1.1.1'
@@ -29,16 +29,21 @@ serverURL = "http://"+str(SERVER_IP[0])+":5005/containers/"
 print "Server URL discovered: ", serverURL
 print "Recording server URL for client use."
 
-f = open(GBL, "r")
-lines = f.readlines()
-f.close()
-
-f = open(GBL, "w")
-for line in lines:
+try:
+  f = open(GBL, "r")
+  lines = f.readlines()
+  f.close()
+  
+  f = open(GBL, "w")
+  for line in lines:
     if "url" in line:
-        f.write("url: " + serverURL + '\n')
+      f.write("url: " + serverURL + '\n')
     else:
-        f.write(line)
-f.close()
+      f.write(line)
+except IOError:
+  f = open(GBL, "w")
+  f.write("url: " + serverURL + '\n')
 
+f.close()
+    
 print ""

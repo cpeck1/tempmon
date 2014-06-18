@@ -14,8 +14,9 @@
 #include "cJSON.h"
 
 #define GLOBAL_FILE "globals.ini"
-#define READINGS_FILE "lastread.json"
-#define AUTH_FILE "auth.json"
+#define READINGS_FILE "/tmp/lastread.json"
+#define AUTH_FILE "/tmp/auth.json"
+#define URL_FILE "/tmp/SERVER_URL"
 
 #define IO_ERROR 1
 #define USB_OPEN_ERROR 2
@@ -76,7 +77,7 @@ int main(void)
   /* Get globals from file */
   /*************************/
   printf("Getting globals from file... ");
-  vfnd = get_file_variable(GLOBAL_FILE, "url", fbuffer);
+  vfnd = get_file_variable(URL_FILE, "url", fbuffer);
   if (vfnd) {
     strcpy(specifications_url, fbuffer);
   } else {
