@@ -5,16 +5,114 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include "cJSON.h"
 
-size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
+#include "misc-structs.h"
+
+char *strcat_percent_encoded(char *destination, char *source)
 {
-  char **response_ptr = (char **) stream;
+  int i;
+  int len_source = strlen(source);
+  int len_destination;
 
-  *response_ptr = strndup((const char*) ptr, (size_t) (size*nmemb));
+  for (i = 0; i < len_source; i++) {
+    len_destination = strlen(destination);
+    switch(source[i]) {
+      case '!':
+	strcat(destination, "%21");
+	break;
+      case '#':
+        strcat(destination, "%23");
+	break;
+      case '$':
+	strcat(destination, "%24");
+	break;
+      case '&':
+	strcat(destination, "%26");
+	break;
+      case '\'':
+	strcat(destination, "%27");
+	break;
+      case '(':
+	strcat(destination, "%28");
+	break;
+      case ')':
+	strcat(destination, "%29");
+	break;
+      case '*':
+	strcat(destination, "%2A");
+	break;
+      case '+':
+	strcat(destination, "%2B");
+	break;
+      case ',':
+	strcat(destination, "%2C");
+	break;
+      case '/':
+	strcat(destination, "%2F");
+	break;
+      case ':':
+	strcat(destination, "%3A");
+	break;
+      case ';':
+	strcat(destination, "%3B");
+	break;
+      case '=':
+	strcat(destination, "%3D");
+	break;
+      case '?':
+	strcat(destination, "%3F");
+	break;
+      case '@':
+	strcat(destination, "%40");
+	break;
+      case '[':
+	strcat(destination, "%5B");
+	break;
+      case ']':
+	strcat(destination, "%5D");
+	break;
+      default:
+	destination[len_destination] = source[i];
+	destination[len_destination+1] = '\0';
+    }
+  }
+  return destination;
+}
 
-  return sizeof(*response_ptr);
-} 
+char *start_postfield(char *destination, char *fieldname, char *fieldvalue)
+{
+  strcpy(destination, "");
+  strcat_percent_encoded(destination, fieldname);
+  strcat(destination, "=");
+  strcat_percent_encoded(destination, fieldvalue);
+  
+  return destination;
+}
+
+char *add_postfield(char *destination, char *fieldname, char *fieldvalue)
+{
+  strcat(destination, "&");
+  strcat_percent_encoded(destination, fieldname);
+  strcat(destination, "=");
+  strcat_percent_encoded(destination, fieldvalue);
+
+  return destination;
+}
+
+size_t write_callback(void *ptr, size_t size, size_t nmemb, string *s)
+{
+  size_t new_len = s->len + size*nmemb;
+  s->ptr = realloc(s->ptr, new_len+1);
+  if (s->ptr == NULL) {
+    fprintf(stderr, "realloc() failed\n");
+    exit(EXIT_FAILURE);
+  }
+  memcpy(s->ptr+s->len, ptr, size*nmemb);
+  s->ptr[new_len] = '\0';
+  s->len = new_len;
+
+  return size*nmemb;
+}
 
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
@@ -24,154 +122,234 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-void do_http_put(char *url, char *filename, char *ca_path)
+int http_PUT(char *url,
+	     char *cookie_file_path_up,
+	     char *cookie_file_path_down,
+	     char *header,
+	     char *request_file_path,
+	     string *s) 
 {
-  /*
-    PUT the file with the given filename to the given url, using the given 
-    authentication credentials and certificate authority path (this assumes the
-    use of self-signed certificates). In the case that ca_path is NULL, 
-    this will still attempt to do the PUT anyway (for instance if the server is
-    not using SSL authentication). Currently only supports uploading cJSON 
-    filetypes.
-  */
-  CURL *curl;
-  CURLcode res;
-  FILE *file;
+  int ret;
   int hd;
+  
+  FILE *request_file;
   struct stat file_info;
+  
+  CURL *curl;
+  CURLcode curl_code;
   struct curl_slist *slist = NULL;
-
-  hd = open(filename, O_RDONLY);
+  
+  /* get request file size */
+  if ((hd = open(request_file_path, O_RDONLY)) < 0) {
+    /* couldn't get file info, so just return that the operation failed */
+    return 0;
+  }
   fstat(hd, &file_info);
   close(hd);
-
-  file = fopen(filename, "r");
+  
+  /* open request file */
+  request_file = fopen(request_file_path, "r");
+  if (request_file == NULL) {
+    /* couldn't open the file, so return that the operation failed */
+    return 0;
+  }
 
   curl = curl_easy_init();
   if (curl) {
-    /* supports uploads of cJSON file types */
-    slist = curl_slist_append(slist, "Content-Type: application/json");
+    /* Set header to given header */
+    slist = curl_slist_append(slist, header);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
-
+    
     /* enable uploading */
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+    /* Set operation to PUT */
+    curl_easy_setopt(curl, CURLOPT_PUT, 1L);
     
     /* specify target URL */
     curl_easy_setopt(curl, CURLOPT_URL, url);
-
-    /* now specify which file to upload */
-    curl_easy_setopt(curl, CURLOPT_READDATA, file);
-
+    
+    /* provide cookie (up) with request, if given */
+    if (cookie_file_path_up != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file_path_up);
+    }
+    
+    /* write all cookies to the cookie path (down), if given */
+    if (cookie_file_path_down != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file_path_down);
+    }
+    
     /* set timeout at 60 seconds */
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60);
-
-    if (ca_path != NULL) {
-      /* if using SSL */
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
-      curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
-
-      /* no host verification in place as we are using self-signed certs */
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0); 
-    }
-
-    /* 
-       provide the size of the upload, we specifically typecast the value to
-       curl_off_t since we must be sure to use the correct data size
-    */
-    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, 
-		     (curl_off_t) file_info.st_size);
-
-    res = curl_easy_perform(curl);
-
-    if (res && res != CURLE_OK) {
-      printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    }
-
-    curl_easy_cleanup(curl);
-    curl_slist_free_all(slist);
-    fclose(file);
-  }
-}
-
-cJSON *get_runtime_specifications(char *url, char *filename,
-				  char *ca_path)
-{
-  /*
-    GET from the given url a cJSON object using the given credentials and 
-    certificate authority. If ca_path is NULL, proceed with the GET request
-    anyway (for instance if the server is not using SSL authentication).
-
-    Generalized http GET caused memory leaks, returning a cJSON object was a
-    work-around.
-  */
-    
-  cJSON *webroot = NULL;;
-
-  /* keeps the handle to the curl object */
-  CURL *curl = NULL;
-  char* json_buffer = (char *) malloc(2048);
-
-  int ret;
-
-  FILE *file;
-  int hd;
-  struct stat file_info;
-  struct curl_slist *slist = NULL;
-
-  hd = open(filename, O_RDONLY);
-  fstat(hd, &file_info);
-  close(hd);
-
-  file = fopen(filename, "r");
-
-  curl = curl_easy_init();
-  if (curl) {
-    slist = curl_slist_append(slist, "Content-Type: application/json");
-    
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1);
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
-
-    if (ca_path != NULL) {
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 2);
-      curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path);
-    }
-    
-    /* specify file to upload */
-    curl_easy_setopt(curl, CURLOPT_READDATA, file);
-
-    /* follow locations specified by the response header */
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+        
     /* setting a callback function to return the data */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    
     /* passing the pointer to the response as the callback parameter */
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &json_buffer);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, s);
 
-    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, 
+    /* now specify to upload file */
+    curl_easy_setopt(curl, CURLOPT_READDATA, (void *) request_file);
+    
+    /* provide the size of the upload */
+    curl_easy_setopt(curl, 
+		     CURLOPT_INFILESIZE_LARGE,
 		     (curl_off_t) file_info.st_size);
-    
-    /* Set timeout at 60 seconds */
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60);
-    /* perform the request */
-    ret = curl_easy_perform(curl);
-    
-    if (ret != CURLE_OK && ret != CURLE_WRITE_ERROR) {
-      printf("Error code: %d\n", ret);
-      curl_easy_cleanup(curl);
-      return NULL;
-    }
-    /* cleaning all curl stuff */
-    curl_easy_cleanup(curl); 
 
+    /* perform the PUT request */
+    curl_code = curl_easy_perform(curl);
   }
-  if (strlen(json_buffer) > 0) {
-    webroot = cJSON_Parse(json_buffer);
-    if (webroot != NULL) {
-      free(json_buffer);
-      return webroot;
-    }
+
+  /* code is 0 if the operation went through, if so return the http code */
+  if (curl_code == 0) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ret);
+  } else {
+    ret = 0;
   }
-  free(json_buffer);
-  return NULL;
+
+  curl_slist_free_all(slist);
+  fclose(request_file); 
+  curl_easy_cleanup(curl);   
+  
+  return ret;
 }
+
+int http_PUT_JSON(char *url,
+		  char *cookie_file_path_up,
+		  char *cookie_file_path_down,
+		  char *request_file_path,
+		  string *s) {
+  int ret =  http_PUT(url, 
+		      cookie_file_path_up, 
+		      cookie_file_path_down, 
+		      "Content-Type: application/json", 
+		      request_file_path, 
+		      s);
+  return ret;
+  
+}
+
+int http_POST(char *url,
+              char *cookie_file_path_up,
+	      char *cookie_file_path_down,
+	      char *header,
+	      char *postfields,
+	      string *s)
+{
+  int ret;
+
+  CURL *curl;
+  CURLcode curl_code;
+  struct curl_slist *slist = NULL;
+  
+  curl = curl_easy_init();
+  
+  if(curl) {
+    /* specify target URL */
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+
+    /* Set header to given header  */
+    if (header != NULL) {
+      curl_slist_append(slist, header);
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
+    }
+    /* provide cookie (up) with request, if given */
+    if (cookie_file_path_up != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file_path_up);
+    }
+    
+    /* write all cookies to the cookie path (down), if given */
+    if (cookie_file_path_down != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file_path_down);
+    }
+
+    /* set the postfields for the request  */
+    if (postfields != NULL) {
+      /* added a null option here because libcurl IS A DUMMIE */
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields);
+    }
+    /* set a callback function to return the data */
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+
+    /* passing the pointer to the response as the callback parameter */
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, s);
+
+    /* perform the POST request */
+    curl_code = curl_easy_perform(curl);
+  }
+  
+  /* code is 0 if the operation succeeded, in which case return the http code */
+  if (curl_code == 0) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ret);
+  } else {
+    ret = 0;
+  }
+  
+  curl_slist_free_all(slist);
+  curl_easy_cleanup(curl);
+  
+  return ret;
+}
+
+int http_GET(char *url,
+	     char *cookie_file_path_up,
+	     char *cookie_file_path_down,
+	     string *s)
+{
+  int ret;
+  
+  CURL *curl;
+  CURLcode curl_code;
+  struct curl_slist *slist = NULL;
+  
+  curl = curl_easy_init();
+  if (curl) {
+    /* set the URL to what was given by the function callee */
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+
+    /* provide cookie (up) with request, if given */
+    if (cookie_file_path_up != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file_path_up);
+    }
+    
+    /* write all cookies to the cookie path (down), if given */
+    if (cookie_file_path_down != NULL) {
+      curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file_path_down);
+    }
+    
+    /* set a callback function to return the data */
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    
+    /* passing the pointer to the response as the callback parameter */
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, s);
+    
+    /* perform the GET request */
+    curl_code = curl_easy_perform(curl);    
+  }
+  
+  /* code is 0 if the operation succeeded, in which case return the http code */
+  if (curl_code == 0) {
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &ret);
+  } else {
+    ret = 0;
+  }
+  
+  curl_slist_free_all(slist);
+  curl_easy_cleanup(curl);
+  
+  return ret;
+}
+
+
+/* int http_DELETE(char *url, */
+/* 		char *cookie_file_path, */
+/* 		string *s) */
+/* { */
+/*   /\* */
+/*     Leaving this shell in case this needs to be implemented in the future. */
+/*    *\/ */
+/*   return 0; */
+/* } */
+

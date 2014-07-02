@@ -44,8 +44,6 @@ typedef enum {
   SEM_COMMANDS_cidentify = 0x60
 } SEM_COMMANDS;
 
-
-
 typedef enum {
   WAITING_FOR_START,
   WAITING_FOR_REPLY_START,
@@ -73,7 +71,6 @@ WAITING,
 
 typedef struct {
   float ADC_VALUE;
-  char *STATUS;
   /* float ELEC_VALUE; */
   float PROCESS_VARIABLE; /*<-- ie temperature!! */
   /* float MA_OUT; */
@@ -139,18 +136,20 @@ typedef struct {
 } CONFIG_BLOCK;
 
 uint8_t get_confirmation_byte(SEM_COMMANDS c);
-
-char *get_device_read_status(float temp_reading, float temp_exp, 
+ 
+char *get_device_read_status(float temp_reading, 
+			     float temp_exp, 
 			     float temp_range);
-void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
-		  uint8_t *byte_array, int array_len);
+
+void get_readings(SEM710_READINGS *readings, 
+		  uint8_t *byte_array, 
+		  int array_len);
 
 void display_readings(SEM710_READINGS *readings);
 
-void pack_auth(char *user, char *password, char *filename);
+int pack_readings(SEM710_READINGS *readings, char *filename);
 
-int pack_readings(SEM710_READINGS *readings, char *user, 
-		   char *password, char *filename);
+int pack_error(char *error, char *filename);
 
 void get_config(CONFIG_DATA *cal, uint8_t *input_array, int array_len);
 

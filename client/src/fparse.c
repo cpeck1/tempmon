@@ -32,7 +32,7 @@ void strip(char *s) {
 }
 
 
-char *get_file_variable(char *fname, char *vname, char *buffer)
+int get_file_variable(char *fname, char *vname, char *buffer)
 {
   char line[256];
   char *vptr;
@@ -40,12 +40,14 @@ char *get_file_variable(char *fname, char *vname, char *buffer)
   int searching;
   /* open the file with path given by fname */
   FILE *f = fopen(fname, "r");
-  
+  if (f == NULL) {
+    return 1;
+  }
   /* scan the file line-by-line for the line beginning with vname */
   searching = 1;
   while(fgets(line, sizeof(line), f) && searching) {
     /* the line contains the desired variable name */
-    if( vptr = strstr(line, vname) ) {
+    if( (vptr = strstr(line, vname)) ) {
       /* put its value into buffer */
       strncpy(buffer, vptr+strlen(vname)+2, strlen(vptr+strlen(vname)));
       strip(buffer);
@@ -53,8 +55,8 @@ char *get_file_variable(char *fname, char *vname, char *buffer)
     } 
   }
   fclose(f);
-    
-  return vptr;
+  
+  return (vptr == NULL);
 }
 
 

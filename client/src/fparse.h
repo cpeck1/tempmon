@@ -17,7 +17,7 @@ extern "C" {
 
   void strip(char *s);
 
-  char *get_file_variable(char *fname, char *vname, char *buffer);
+  int get_file_variable(char *fname, char *vname, char *buffer);
 
   int get_cjson_object_from_file(char *filename, char *obj_name, char **buffer);
 #ifdef __cplusplus
