@@ -423,7 +423,6 @@ int main(void)
   ftdi_free(ftHandle);
   
   free(container_num);
-  free(last_read_status);
 
   free(server_login_email);
   free(server_login_password);
