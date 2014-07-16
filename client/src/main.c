@@ -205,7 +205,6 @@ int main(void)
   JSON_root = cJSON_Parse(http_response_jsobj.ptr);
   if (JSON_root == NULL) {
     printf("invalid JSON struct returned\n");
-    puts(http_response_jsobj.ptr);
     err = 1;
   }
   else {

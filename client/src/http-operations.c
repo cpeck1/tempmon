@@ -74,7 +74,6 @@ char *strcat_percent_encoded(char *destination, char *source)
       default:
 	destination[len_destination] = source[i];
 	destination[len_destination+1] = '\0';
-	i++;
     }
   }
   return destination;

@@ -25,7 +25,7 @@ sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 while not SERVER_IP and not (data == "TEMPMON_SERVER_IP"):
   data, SERVER_IP = sock.recvfrom(1024)
 
-serverURL = "http://"+str(SERVER_IP[0])+":5005/containers/"
+serverURL = "http://"+str(SERVER_IP[0])+":5005"
 print "Server URL discovered: ", serverURL
 print "Recording server URL for client use."
 
