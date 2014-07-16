@@ -36,6 +36,10 @@ void init_string(struct string *s) {
   s->ptr[0] = '\0';
 }
 
+void deinit_string(struct string *s) {
+  free(s->ptr);
+}
+
 int main(void)
 {
   char fbuffer[256];
@@ -65,6 +69,9 @@ int main(void)
   struct string http_response_buffer;
   init_string(&http_response_buffer);
   
+  struct string http_response_jsobj;
+  init_string(&http_response_jsobj);
+
   cJSON *JSON_root;
   cJSON *JSON_specifications;
   cJSON *ob;
@@ -157,7 +164,7 @@ int main(void)
 	  "%s%s",
 	  server_url_base,
 	  server_path_authentication);
-  
+
   /* construct login postfield */
   start_postfield(postfield_buffer, "email", server_login_email);
   add_postfield(postfield_buffer, "password", server_login_password);
@@ -193,16 +200,17 @@ int main(void)
   http_response_code = http_GET(server_url_specifications,
 				COOKIE_FILE,
 				NULL,
-				&http_response_buffer);
-  JSON_root = cJSON_Parse(http_response_buffer.ptr);
+				&http_response_jsobj);
   
+  JSON_root = cJSON_Parse(http_response_jsobj.ptr);
   if (JSON_root == NULL) {
     printf("invalid JSON struct returned\n");
+    puts(http_response_jsobj.ptr);
     err = 1;
   }
   else {
     JSON_specifications = cJSON_GetObjectItem(JSON_root, "specifications");
-    
+
     if (JSON_specifications != NULL) {
       ob = cJSON_GetObjectItem(JSON_specifications, "nextUpdateIn");
       if (ob != NULL) {
@@ -435,6 +443,9 @@ int main(void)
 
   free(postfield_buffer);
   free(error_buffer);
+
+  deinit_string(&http_response_buffer);
+  deinit_string(&http_response_jsobj);
   
   return 0;
 }

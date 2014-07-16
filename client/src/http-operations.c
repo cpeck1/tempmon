@@ -74,6 +74,7 @@ char *strcat_percent_encoded(char *destination, char *source)
       default:
 	destination[len_destination] = source[i];
 	destination[len_destination+1] = '\0';
+	i++;
     }
   }
   return destination;
@@ -181,6 +182,10 @@ int http_PUT(char *url,
     
     /* set timeout at 60 seconds */
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60);
+
+    /* While certificates are self-signed, ignore peer verification */
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
         
     /* setting a callback function to return the data */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -268,6 +273,11 @@ int http_POST(char *url,
       /* added a null option here because libcurl IS A DUMMIE */
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfields);
     }
+
+    /* While certificates are self-signed, ignore peer verification */
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
     /* set a callback function to return the data */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 
@@ -318,7 +328,11 @@ int http_GET(char *url,
     if (cookie_file_path_down != NULL) {
       curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file_path_down);
     }
-    
+
+    /* While certificates are self-signed, ignore peer verification */
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);    
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
     /* set a callback function to return the data */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     
