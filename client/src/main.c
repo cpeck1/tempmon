@@ -362,7 +362,7 @@ int main(void)
   
   if (read_bytes <= 0) {
     sprintf(error_buffer,
-	    "failed to read device with vendor ID %d and product ID %D.",
+	    "failed to read device with vendor ID %d and product ID %d.",
 	    device_vendor_id,
 	    device_product_id);
     
