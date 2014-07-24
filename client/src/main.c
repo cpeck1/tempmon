@@ -221,7 +221,7 @@ int main(void)
       
       ob = cJSON_GetObjectItem(JSON_specifications, "lastReadStatus");
       if (ob != NULL) {
-	last_read_status = ob->valuestring;
+	strcpy(last_read_status, ob->valuestring);
       } else {
 	puts("variable not found \"lastReadStatus\""); 
 	err = 1;
@@ -229,7 +229,7 @@ int main(void)
 
       ob = cJSON_GetObjectItem(JSON_specifications, "uploadURL");
       if (ob != NULL) {	
-	server_path_reading_upload = ob->valuestring;
+	strcpy(server_path_reading_upload, ob->valuestring);
       } else { 
 	puts("variable not found \"uploadURL\"");
 	err = 1; 
@@ -421,16 +421,19 @@ int main(void)
   /****************/
   ftdi_deinit(ftHandle);
   ftdi_free(ftHandle);
-  
+
   free(container_num);
+  free(last_read_status);
 
   free(server_login_email);
   free(server_login_password);
-  
+
   free(server_path_authentication);
   free(server_path_containers);
   free(server_path_specifications);
+
   free(server_path_reading_upload);
+  return 0;  
 
   free(certificate_authority_path);
 
