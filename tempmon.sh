@@ -19,15 +19,10 @@
 # : sudo chmod 755 /etc/init.d/tempmonDaemon.sh
 # : sudo chmod 755 tempmon.sh
 # : 
-d=${PWD}
+d=/home/pi/tempmon
 c=$d/client/tempmon
 p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
-
-now=$(date)
-#python $p
-cd $d/client
-make
 
 echo "Waiting for network to become available"
 while [ true ];
@@ -41,6 +36,11 @@ do
 	sleep 5
     fi
 done
+
+now=$(date)
+python $p
+cd $d/client
+make
 
 while [ true ];
 do

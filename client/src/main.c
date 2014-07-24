@@ -104,7 +104,7 @@ int main(void)
     strcpy(server_url_base, fbuffer);
   } else {
     puts("variable not found \"url\"");
-    exit(IO_ERROR);
+    exit(SERVER_ERROR);
   }
 
   err = get_file_variable(GLOBAL_FILE, "container_num", fbuffer);
