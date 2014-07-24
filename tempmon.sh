@@ -33,8 +33,8 @@ echo "Waiting for network to become available"
 while [ true ];
 do
     ping -c 1 www.google.ca
-    if [[ $? == 0 ]];
-	then
+    a=$?
+    if [ "$a" -eq 0 ]; then
 	echo "Network avalable"
 	break;
     else
