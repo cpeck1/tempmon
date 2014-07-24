@@ -19,15 +19,28 @@
 # : sudo chmod 755 /etc/init.d/tempmonDaemon.sh
 # : sudo chmod 755 tempmon.sh
 # : 
-d=/home/pi/tempmon
+d=${PWD}
 c=$d/client/tempmon
 p=$d/UDPrecv.py
 f=$d/tempmonlogs.txt
 
 now=$(date)
-python $p
+#python $p
 cd $d/client
 make
+
+echo "Waiting for network to become available"
+while [ true ];
+do
+    ping -c 1 www.google.ca
+    if [[ $? == 0 ]];
+	then
+	echo "Network avalable"
+	break;
+    else
+	sleep 5
+    fi
+done
 
 while [ true ];
 do
