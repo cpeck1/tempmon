@@ -1,4 +1,4 @@
-
+ 
 !!!PROGRAM LAUNCHED: Thu May 29 11:35:48 MDT 2014!!!
 ---Discovering server IP
 ---Reading local device
