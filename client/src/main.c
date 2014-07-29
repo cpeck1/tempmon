@@ -433,7 +433,6 @@ int main(void)
   free(server_path_specifications);
 
   free(server_path_reading_upload);
-  return 0;  
 
   free(certificate_authority_path);
 
