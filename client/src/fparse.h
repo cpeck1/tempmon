@@ -15,7 +15,11 @@ extern "C" {
 
   void get_file(FILE *f, char *buffer);
 
-  cJSON *get_cjson_object_from_file(char *filename, char *obj_name);
+  void strip(char *s);
+
+  int get_file_variable(char *fname, char *vname, char *buffer);
+
+  int get_cjson_object_from_file(char *filename, char *obj_name, char **buffer);
 #ifdef __cplusplus
 }
 #endif

@@ -96,8 +96,7 @@ char *get_device_read_status(float temp_reading, float temp_exp,
   return "OK";
 }
 
-void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
-		  uint8_t *byte_array, int array_len)
+void get_readings(SEM710_READINGS *readings, uint8_t *byte_array, int array_len)
 {
   assert (array_len > 23);
 
@@ -107,63 +106,56 @@ void get_readings(SEM710_READINGS *readings, float temp_exp, float temp_range,
 
   readings->ADC_VALUE = float_from_byte_array(byte_array, 3);
   readings->PROCESS_VARIABLE = float_from_byte_array(byte_array, 11);
-  readings->STATUS = get_device_read_status(readings->PROCESS_VARIABLE, 
-					    temp_exp, temp_range);
 }
 
 void display_readings(SEM710_READINGS *readings)
 {
   printf("ADC_VALUE=%f\n", readings->ADC_VALUE);
-  printf("STATUS=%s\n", readings->STATUS);
   /* printf("ELEC_VALUE=%f\n", readings->ELEC_VALUE); */
   /* printf("PROCESS_VARIABLE=%f\n", readings->PROCESS_VARIABLE); */
   /* printf("MA_OUT=%f\n", readings->MA_OUT); */
   /* printf("CJ_TEMP=%f\n", readings->CJ_TEMP); */
 }
 
-void pack_auth(char *user, char *password, char *filename) {
-  char json_auth[100];
-  FILE *f;
-
-  sprintf(json_auth, "{ \"email\": \"%s\", \"password\": \"%s\" }",
-	  user, password);
-
-  f = fopen(filename, "w");
-  fputs(json_auth, f);
-  fclose(f);
-
-}
-
-void pack_readings(SEM710_READINGS *readings, char *user, 
-		   char *password, char *filename)
+int pack_readings(SEM710_READINGS *readings, char *filename)
 {
   char json_readings[500];
   FILE *f;
-
-  sprintf(
-	  json_readings, 
- "{ \"email\": \"%s\", \"password\": \"%s\", \"temperature\": %f, \"status\": \"%s\" }",
-	  user,
-	  password,
-	  readings->PROCESS_VARIABLE, 
-	  readings->STATUS
-	  );
+  
+  sprintf(json_readings, 
+	  "{ \"temperature\": %f }",
+	  readings->PROCESS_VARIABLE);
 
   f = fopen(filename, "w");
+  if (f == NULL) {
+    return 1;
+  }
+
   fputs(json_readings, f);
+
   fclose(f);
+  return 0;
+}
 
-  /* strcat(json_readings, "\"temperature\":"); */
-  /* strcat(json_readings, temperature); */
-  /* strcat(json_readings, ", \"status\":"); */
-  /* strcat(json_readings, status); */
-  /* strcat(json_readings, "}"); */
+int pack_error(char *error, char *filename)
+{
+  char json_readings[500];
+  FILE *f;
+  
+  sprintf(json_readings, 
+	  "{ \"error\": \"%s\" }",
+	  error);
 
-  /* char *retval = json_readings; */
+  f = fopen(filename, "w");
 
-  /* // return "{ \"temperature\":55.1, \"status\":\"ok\" }"; */
+  if (f == NULL) {
+    return 1;
+  }
 
-  /* return retval; */
+  fputs(json_readings, f);
+
+  fclose(f);
+  return 0;
 }
 
 void get_config(CONFIG_DATA *cal, uint8_t *byte_array, int array_len)

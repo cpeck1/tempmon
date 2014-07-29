@@ -19,7 +19,48 @@ void get_file(FILE *f, char *buffer)
   }
 }
 
-cJSON *get_cjson_object_from_file(char *filename, char *obj_name)
+void strip(char *s) {
+    char *p2 = s;
+    while(*s != '\0') {
+    	if(*s != '\t' && *s != '\n') {
+    		*p2++ = *s++;
+    	} else {
+    		++s;
+    	}
+    }
+    *p2 = '\0';
+}
+
+
+int get_file_variable(char *fname, char *vname, char *buffer)
+{
+  char line[256];
+  char *vptr;
+  
+  int searching;
+  /* open the file with path given by fname */
+  FILE *f = fopen(fname, "r");
+  if (f == NULL) {
+    return 1;
+  }
+  /* scan the file line-by-line for the line beginning with vname */
+  searching = 1;
+  while(fgets(line, sizeof(line), f) && searching) {
+    /* the line contains the desired variable name */
+    if( (vptr = strstr(line, vname)) ) {
+      /* put its value into buffer */
+      strncpy(buffer, vptr+strlen(vname)+2, strlen(vptr+strlen(vname)));
+      strip(buffer);
+      searching = 0;
+    } 
+  }
+  fclose(f);
+  
+  return (vptr == NULL);
+}
+
+
+int get_cjson_object_from_file(char *filename, char *obj_name, char **buffer)
 {
   /* 
      returns the cJSON object stored as a string with the given name
@@ -46,12 +87,13 @@ cJSON *get_cjson_object_from_file(char *filename, char *obj_name)
       root = cJSON_Parse(fbuffer);
       object = cJSON_GetObjectItem(root, obj_name);
       if (object != NULL) {
-	return object;
+	sprintf(*buffer, "%s", object->valuestring);
+	return 0;
       }
     }
     else {
       fclose(dfile);
     }
   }
-  return NULL;
+  return 1;
 }
