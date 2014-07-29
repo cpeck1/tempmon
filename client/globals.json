@@ -1,0 +1,10 @@
+{
+    "specifications": {
+	"freezer_num":"/containers/2",
+	"url":"http://10.12.20.75:9000",
+	"spec_uri":"/specifications/clientpkg.json",
+	"user":"cpeck1@ualberta.ca",
+	"pwd":"R1chd0ghunt$",
+	"ca_path":"/home/rpi/tempmon-client/ssl/tempmonCA.crt"
+    }
+}

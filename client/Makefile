@@ -17,7 +17,7 @@ COMMON_SRCS := \
 	fparse.c \
 	usb-operations.c \
 	http-operations.c \
-	cJSON.c \
+	cJSON.c
 
 SRCS := \
 	$(COMMON_SRCS) \
